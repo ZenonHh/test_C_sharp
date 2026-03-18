@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 using System.Collections.ObjectModel;
 using DoAnCSharp.Models;
 using DoAnCSharp.Services;
@@ -61,4 +62,28 @@ namespace DoAnCSharp
             }
         }
     }
+=======
+﻿namespace VinhKhanhFoodTour_Clean;
+
+public partial class MainPage : ContentPage
+{
+	int count = 0;
+
+	public MainPage()
+	{
+		InitializeComponent();
+	}
+
+	private void OnCounterClicked(object? sender, EventArgs e)
+	{
+		count++;
+
+		if (count == 1)
+			CounterBtn.Text = $"Clicked {count} time";
+		else
+			CounterBtn.Text = $"Clicked {count} times";
+
+		SemanticScreenReader.Announce(CounterBtn.Text);
+	}
+>>>>>>> fb7b8b1 (firts)
 }

@@ -1,9 +1,16 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <Shell
+<<<<<<< HEAD
     x:Class="DoAnCSharp.AppShell"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:local="clr-namespace:DoAnCSharp"
+=======
+    x:Class="VinhKhanhFoodTour_Clean.AppShell"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:local="clr-namespace:VinhKhanhFoodTour_Clean"
+>>>>>>> fb7b8b1 (firts)
     Shell.FlyoutBehavior="Disabled">
 
     <ShellContent
@@ -11,4 +18,8 @@
         ContentTemplate="{DataTemplate local:MainPage}"
         Route="MainPage" />
 
+<<<<<<< HEAD
 </Shell>
+=======
+</Shell>
+>>>>>>> fb7b8b1 (firts)

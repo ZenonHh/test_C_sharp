@@ -1,0 +1,15 @@
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="VinhKhanhFoodTour.Views.HomePage" 
+             Title="Trang Chủ">
+    
+    <VerticalStackLayout Padding="20" Spacing="15">
+        <Label x:Name="WelcomeLabel" FontSize="24" FontAttributes="Bold" />
+        <Label x:Name="RecommendTitle" FontSize="18" />
+        
+        <CollectionView x:Name="PoiCollectionView">
+            </CollectionView>
+
+        <Button Text="Đổi Ngôn Ngữ" Clicked="OnChangeLangClicked" />
+    </VerticalStackLayout>
+</ContentPage>
