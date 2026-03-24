@@ -13,28 +13,22 @@ using Microsoft.Maui.ApplicationModel;
 using Microsoft.Maui.Devices.Sensors;
 using Microsoft.Maui.Media;
 
-namespace DoAnCSharp.Views;
+// MỚI: Gọi các thư mục chứa Model và Service vào
+using DoAnCSharp.Models;
+using DoAnCSharp.Services;
 
-public class AudioPOI
-{
-    public string Name { get; set; } = string.Empty;
-    public string Description { get; set; } = string.Empty;
-    public double Lat { get; set; }
-    public double Lng { get; set; }
-    public double Radius { get; set; }
-    public int Priority { get; set; }
-    public string ImageAsset { get; set; } = string.Empty;
-}
+namespace DoAnCSharp.Views;
 
 public partial class MapPage : ContentPage
 {
+    // MỚI: Khai báo dịch vụ Database và danh sách chứa dữ liệu
+    private DatabaseService _dbService = new DatabaseService();
     private List<AudioPOI> _pois = new();
+
     private IDispatcherTimer? _radarTimer;
     private CancellationTokenSource? _ttsCancellationTokenSource;
     private AudioPOI? _currentPoi;
     private bool _isPlaying = false;
-    
-    // BIẾN QUAN TRỌNG: Khóa Radar khi người dùng đang tự chọn quán
     private bool _isManualSelection = false; 
     private string _targetLang = "vi"; 
 
@@ -44,87 +38,92 @@ public partial class MapPage : ContentPage
         {
             InitializeComponent();
             SetupMap();
-            SetupPOIs();
-            LoadPinsToMap();
             StartRadar();
+            // Lưu ý: Mình không gọi LoadPinsToMap ở đây nữa vì phải đợi Database nạp xong mới có Pin để vẽ
         }
         catch (Exception ex)
         {
-            Dispatcher.Dispatch(async () => await DisplayAlert("LỖI", ex.Message, "OK"));
+            Dispatcher.Dispatch(async () => await DisplayAlert("LỖI KHỞI TẠO", ex.Message, "OK"));
+        }
+    }
+
+    // MỚI: Hàm OnAppearing sẽ tự động chạy khi trang Bản đồ vừa hiển thị lên màn hình
+    protected override async void OnAppearing()
+    {
+        base.OnAppearing();
+        await LoadDataFromDatabaseAsync();
+    }
+
+    // MỚI: Hàm "hút" dữ liệu từ SQLite
+    private async Task LoadDataFromDatabaseAsync()
+    {
+        try
+        {
+            // Lấy toàn bộ quán ốc từ CSDL
+            _pois = await _dbService.GetPOIsAsync();
+            
+            // Có dữ liệu rồi mới đem ghim lên bản đồ
+            LoadPinsToMap();
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlert("Lỗi Dữ Liệu", "Không thể tải dữ liệu quán ăn: " + ex.Message, "OK");
         }
     }
 
     private async Task<string> TranslateTextAsync(string text, string toLang)
     {
         if (string.IsNullOrEmpty(text) || toLang == "vi") return text;
-        try
-        {
+        try {
             string url = $"https://translate.googleapis.com/translate_a/single?client=gtx&sl=vi&tl={toLang}&dt=t&q={Uri.EscapeDataString(text)}";
             using var client = new HttpClient();
             var response = await client.GetStringAsync(url);
             var json = JsonDocument.Parse(response);
             return json.RootElement[0][0][0].GetString() ?? text;
-        }
-        catch { return text; }
+        } catch { return text; }
     }
 
     private void SetupMap()
     {
-        if (foodMapView.Map != null)
-        {
-            foodMapView.Map.Layers.Add(OpenStreetMap.CreateTileLayer("VinhKhanhFoodTourApp"));
+        if (foodMapView.Map != null) {
+            foodMapView.Map.Layers.Add(OpenStreetMap.CreateTileLayer("VTour"));
             var center = SphericalMercator.FromLonLat(106.7000, 10.7600);
             foodMapView.Map.Home = n => n.CenterOnAndZoomTo(new MPoint(center.x, center.y), 2);
         }
         foodMapView.MyLocationEnabled = true;
     }
 
-    private void SetupPOIs()
-    {
-        _pois = new List<AudioPOI>
-        {
-            new AudioPOI { Name = "Ốc Oanh", Description = "Bạn đã đến Ốc Oanh. Món ăn biểu tượng ở đây là ốc hương xào bắp bơ siêu ngon.", Lat = 10.7600, Lng = 106.7000, Radius = 50, Priority = 1, ImageAsset = "oc_oanh.jpg" },
-            new AudioPOI { Name = "Ốc Đào 2", Description = "Chi nhánh Ốc Đào nổi tiếng, nổi bật với nước chấm đậm đà.", Lat = 10.7581, Lng = 106.7061, Radius = 50, Priority = 1, ImageAsset = "oc_dao2.webp" },
-            new AudioPOI { Name = "Ốc Vũ", Description = "Quán ăn dành cho tín đồ mê ốc mỡ và bơ tỏi.", Lat = 10.7578, Lng = 106.7058, Radius = 50, Priority = 2, ImageAsset = "dotnet_bot.png" }
-        };
-    }
-
     private void StartRadar()
     {
         _radarTimer = Dispatcher.CreateTimer();
-        _radarTimer.Interval = TimeSpan.FromSeconds(3); 
+        _radarTimer.Interval = TimeSpan.FromSeconds(3);
         _radarTimer.Tick += async (s, e) => await CheckGeofenceAndPlayAudio();
         _radarTimer.Start();
     }
 
-    // --- LOGIC RADAR THÔNG MINH ---
+    // --- LOGIC GPS THỰC TẾ ---
     private async Task CheckGeofenceAndPlayAudio()
     {
-        try
-        {
-            // NẾU ĐANG CHỦ ĐỘNG NGHE QUÁN KHÁC -> TẠM NGỦ RADAR ĐỂ KHÔNG BỊ CHÈN ĐÈ
+        try {
             if (_isManualSelection) return;
 
-            var userLoc = new Location(10.7600, 106.7000); // Đang giả lập đứng tại Ốc Oanh
-            
+            var request = new GeolocationRequest(GeolocationAccuracy.Medium, TimeSpan.FromSeconds(2));
+            var userLoc = await Geolocation.Default.GetLocationAsync(request);
+
+            if (userLoc == null) return; 
+
             MainThread.BeginInvokeOnMainThread(() => {
                 foodMapView.MyLocationLayer?.UpdateMyLocation(new Mapsui.UI.Maui.Position(userLoc.Latitude, userLoc.Longitude));
             });
 
             var poi = _pois.FirstOrDefault(p => Location.CalculateDistance(userLoc, new Location(p.Lat, p.Lng), DistanceUnits.Kilometers) * 1000 <= p.Radius);
 
-            if (poi != null)
-            {
-                if (_currentPoi != poi) 
-                {
-                    PlayAudioAlert(poi); // Bước vào vùng -> Tự động phát
+            if (poi != null) {
+                if (_currentPoi != poi) {
+                    PlayAudioAlert(poi);
                 }
-            }
-            else
-            {
-                // Ra khỏi vùng -> Dừng phát và ẩn thanh Player
-                if (_currentPoi != null)
-                {
+            } else {
+                if (_currentPoi != null && !_isManualSelection) {
                     StopAudio();
                     _currentPoi = null;
                 }
@@ -136,10 +135,7 @@ public partial class MapPage : ContentPage
     {
         _ttsCancellationTokenSource?.Cancel();
         _isPlaying = false;
-        
-        // Khi bấm Dừng (Stop), mở khóa lại cho Radar hoạt động
-        _isManualSelection = false; 
-
+        _isManualSelection = false;
         MainThread.BeginInvokeOnMainThread(() => {
             AudioPlayerUI.IsVisible = false;
             PlayStopButton.Text = "▶️";
@@ -148,20 +144,15 @@ public partial class MapPage : ContentPage
 
     private async void OnLanguageClicked(object sender, EventArgs e)
     {
-        string action = await DisplayActionSheet("Ngôn ngữ / Language", "Hủy", null, "Tiếng Việt", "English", "日本語 (Japanese)", "한국어 (Korean)");
+        string action = await DisplayActionSheet("Ngôn ngữ / Language", "Hủy", null, "Tiếng Việt", "English", "日本語", "한국어");
         if (string.IsNullOrEmpty(action) || action == "Hủy") return;
 
         if (action == "Tiếng Việt") _targetLang = "vi";
         else if (action == "English") _targetLang = "en";
-        else if (action == "日本語 (Japanese)") _targetLang = "ja";
-        else if (action == "한국어 (Korean)") _targetLang = "ko";
+        else if (action == "日本語") _targetLang = "ja";
+        else if (action == "한국어") _targetLang = "ko";
 
-        // Cập nhật giao diện nếu đang mở
-        if (_currentPoi != null)
-        {
-            if (PoiDetailCard.IsVisible) await UpdateDetailCardAsync(_currentPoi);
-            else if (_isPlaying) PlayAudioAlert(_currentPoi);
-        }
+        if (_currentPoi != null) PlayAudioAlert(_currentPoi);
     }
 
     private async void PlayAudioAlert(AudioPOI poi)
@@ -174,7 +165,7 @@ public partial class MapPage : ContentPage
             TranslationLoader.IsRunning = true;
             AudioText.Text = _targetLang == "vi" ? poi.Name : "Translating...";
             AudioPlayerUI.IsVisible = true;
-            PoiDetailCard.IsVisible = false; // Đảm bảo ẩn Card đi để không bị chồng chéo
+            PoiDetailCard.IsVisible = false; 
             PlayStopButton.Text = "⏹";
         });
 
@@ -191,47 +182,20 @@ public partial class MapPage : ContentPage
         _ttsCancellationTokenSource?.Cancel();
         _ttsCancellationTokenSource = new CancellationTokenSource();
 
-        try 
-        {
+        try {
             var locales = await TextToSpeech.Default.GetLocalesAsync();
             Locale? locale = null;
 
-            // --- ÉP BUỘC TÌM ĐÚNG GIỌNG BẰNG MÃ CHUẨN ANDROID ---
-            if (_targetLang == "en") 
-            {
-                // Ưu tiên tìm giọng Mỹ (en-US), nếu không có thì tìm giọng Anh bất kỳ
-                locale = locales.FirstOrDefault(l => l.Language.Equals("en-US", StringComparison.OrdinalIgnoreCase)) 
-                      ?? locales.FirstOrDefault(l => l.Language.StartsWith("en", StringComparison.OrdinalIgnoreCase));
-            }
-            else if (_targetLang == "ja") 
-            {
-                locale = locales.FirstOrDefault(l => l.Language.Equals("ja-JP", StringComparison.OrdinalIgnoreCase))
-                      ?? locales.FirstOrDefault(l => l.Language.StartsWith("ja", StringComparison.OrdinalIgnoreCase));
-            }
-            else if (_targetLang == "ko") 
-            {
-                locale = locales.FirstOrDefault(l => l.Language.Equals("ko-KR", StringComparison.OrdinalIgnoreCase))
-                      ?? locales.FirstOrDefault(l => l.Language.StartsWith("ko", StringComparison.OrdinalIgnoreCase));
-            }
-            else 
-            {
-                // Tiếng Việt
-                locale = locales.FirstOrDefault(l => l.Language.Equals("vi-VN", StringComparison.OrdinalIgnoreCase))
-                      ?? locales.FirstOrDefault(l => l.Language.StartsWith("vi", StringComparison.OrdinalIgnoreCase));
-            }
+            if (_targetLang == "en") locale = locales.FirstOrDefault(l => l.Language.Equals("en-US", StringComparison.OrdinalIgnoreCase)) ?? locales.FirstOrDefault(l => l.Language.StartsWith("en", StringComparison.OrdinalIgnoreCase));
+            else if (_targetLang == "ja") locale = locales.FirstOrDefault(l => l.Language.Equals("ja-JP", StringComparison.OrdinalIgnoreCase)) ?? locales.FirstOrDefault(l => l.Language.StartsWith("ja", StringComparison.OrdinalIgnoreCase));
+            else if (_targetLang == "ko") locale = locales.FirstOrDefault(l => l.Language.Equals("ko-KR", StringComparison.OrdinalIgnoreCase)) ?? locales.FirstOrDefault(l => l.Language.StartsWith("ko", StringComparison.OrdinalIgnoreCase));
+            else locale = locales.FirstOrDefault(l => l.Language.Equals("vi-VN", StringComparison.OrdinalIgnoreCase)) ?? locales.FirstOrDefault(l => l.Language.StartsWith("vi", StringComparison.OrdinalIgnoreCase));
 
-            // Gọi hàm đọc với giọng đã được chỉ định rõ ràng
-            await TextToSpeech.Default.SpeakAsync(tDesc, new SpeechOptions { 
-                Locale = locale 
-            }, _ttsCancellationTokenSource.Token);
-        } 
-        catch { }
-        finally 
-        {
+            await TextToSpeech.Default.SpeakAsync(tDesc, new SpeechOptions { Locale = locale }, _ttsCancellationTokenSource.Token);
+        } catch { }
+        finally {
             _isPlaying = false;
-            MainThread.BeginInvokeOnMainThread(() => { 
-                PlayStopButton.Text = "▶️"; 
-            });
+            MainThread.BeginInvokeOnMainThread(() => { PlayStopButton.Text = "▶️"; });
         }
     }
 
@@ -239,19 +203,21 @@ public partial class MapPage : ContentPage
     {
         if (e.Pin?.Tag is AudioPOI clickedPoi)
         {
-            // Bấm vào Pin -> CHỈ hiện Card chi tiết, KHÔNG tự động phát nhạc để tránh đè giao diện
-            _isManualSelection = true; // Khóa Radar
-            _ = UpdateDetailCardAsync(clickedPoi);
+            _isManualSelection = true;
+            StopAudio(); 
+            _ = UpdateDetailCardAsync(clickedPoi); 
         }
         e.Handled = true;
     }
 
     private async Task UpdateDetailCardAsync(AudioPOI poi)
     {
+        _currentPoi = poi; 
+
         MainThread.BeginInvokeOnMainThread(() => {
             DetailName.Text = "Translating...";
             PoiDetailCard.IsVisible = true;
-            AudioPlayerUI.IsVisible = false; // Ẩn thanh Player đi
+            AudioPlayerUI.IsVisible = false; 
         });
 
         string tName = await TranslateTextAsync(poi.Name, _targetLang);
@@ -266,35 +232,37 @@ public partial class MapPage : ContentPage
 
     private void LoadPinsToMap()
     {
+        if (foodMapView == null) return;
+        
         foodMapView.Pins.Clear();
-        foreach (var poi in _pois)
-        {
+        foreach (var poi in _pois) {
             foodMapView.Pins.Add(new Mapsui.UI.Maui.Pin(foodMapView) { Label = poi.Name, Position = new Mapsui.UI.Maui.Position(poi.Lat, poi.Lng), Tag = poi, Color = Microsoft.Maui.Graphics.Colors.Red });
         }
         foodMapView.PinClicked -= OnMapPinClicked;
         foodMapView.PinClicked += OnMapPinClicked;
     }
 
-    private void CustomMyLocationClicked(object sender, EventArgs e)
+    private void CustomMyLocationClicked(object? sender, EventArgs e)
     {
         var center = SphericalMercator.FromLonLat(106.7000, 10.7600);
         foodMapView.Map?.Navigator.CenterOnAndZoomTo(new MPoint(center.x, center.y), 2);
     }
 
-    private void ToggleAudioClicked(object sender, EventArgs e) {
-        if (_isPlaying) StopAudio(); // Tắt nhạc và mở khóa Radar
+    private void ToggleAudioClicked(object? sender, EventArgs e) {
+        if (_isPlaying) StopAudio(); 
         else if (_currentPoi != null) PlayAudioAlert(_currentPoi);
     }
 
-    private void CloseDetailClicked(object sender, EventArgs e) {
+    private void CloseDetailClicked(object? sender, EventArgs e) {
         PoiDetailCard.IsVisible = false;
-        _isManualSelection = false; // Mở khóa cho Radar chạy lại
+        _isManualSelection = false; 
     }
 
-    private void PlayReviewFromDetailClicked(object sender, EventArgs e) {
+    private void PlayReviewFromDetailClicked(object? sender, EventArgs e) {
         if (_currentPoi != null) { 
+            _isManualSelection = true;
             PoiDetailCard.IsVisible = false; 
-            PlayAudioAlert(_currentPoi); // Chuyển từ Card sang chế độ Nghe
+            PlayAudioAlert(_currentPoi); 
         }
     }
 }
