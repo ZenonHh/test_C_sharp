@@ -14,7 +14,7 @@ public static class MauiProgram
         var builder = MauiApp.CreateBuilder();
         builder
             .UseMauiApp<App>()
-            .UseSkiaSharp() // Dòng này cực kỳ quan trọng để chạy bản đồ OpenStreetMap
+            .UseSkiaSharp()
             .UseMauiCommunityToolkit()
             .ConfigureFonts(fonts =>
             {
@@ -22,29 +22,22 @@ public static class MauiProgram
                 fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
             });
 
-        // 1. ĐĂNG KÝ CÁC DỊCH VỤ (Services)
+        // 1. ĐĂNG KÝ DỊCH VỤ (Chỉ giữ lại những file thực sự tồn tại trong thư mục Services)
         builder.Services.AddSingleton<ILanguageService, LanguageService>();
-        builder.Services.AddSingleton<IPoiRepository, PoiRepository>();
-        builder.Services.AddSingleton<LocationService>(); // Tên phải đúng với class của bạn
+        builder.Services.AddSingleton<DatabaseService>();
+        builder.Services.AddSingleton<LocationService>(); // Sửa lỗi Ambiguous
+        builder.Services.AddSingleton<IAuthService, AuthService>();
 
-        // 2. ĐĂNG KÝ VIEWMODELS (Quan trọng: Giúp App không bị văng khi mở trang Bản đồ)
-        builder.Services.AddSingleton<ILocationService, LocationService>();
-        builder.Services.AddSingleton<IGeofenceService, GeofenceService>();
-        
-        builder.Services.AddTransient<AuthViewModel>(); // Rất quan trọng
-        builder.Services.AddSingleton<MapViewModel>();
+        // 2. ĐĂNG KÝ VIEWMODELS (Chỉ giữ lại những file đang có)
+        builder.Services.AddTransient<AuthViewModel>();
         builder.Services.AddSingleton<HomeViewModel>();
-        // 3. ĐĂNG KÝ CÁC TRANG (Pages)
-        builder.Services.AddTransient<Views.AuthPage>(); // Rất quan trọng để chạy Bước 1
+
+        // 3. ĐĂNG KÝ CÁC TRANG 
+        builder.Services.AddTransient<Views.AuthPage>();
         builder.Services.AddSingleton<Views.HomePage>();
         builder.Services.AddSingleton<Views.MapPage>();
         builder.Services.AddSingleton<AppShell>();
 
-        //builder.Services.AddSingleton<HomePage>();
-        //builder.Services.AddSingleton<MapPage>();
-        //builder.Services.AddSingleton<ProfilePage>();
-        //builder.Services.AddSingleton<AppShell>();
-        builder.Services.AddSingleton<IAuthService, AuthService>();
 #if DEBUG
         //builder.Logging.AddDebug();
 #endif

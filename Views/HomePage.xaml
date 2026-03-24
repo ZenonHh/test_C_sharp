@@ -58,7 +58,7 @@
         </CollectionView.Header>
 
         <CollectionView.ItemTemplate>
-            <DataTemplate x:DataType="models:POI">
+            <DataTemplate x:DataType="models:AudioPOI">
                 <Grid Padding="20,0,20,20">
                     <Border StrokeShape="RoundRectangle 20" BackgroundColor="White" StrokeThickness="0">
                         <Border.Shadow>
