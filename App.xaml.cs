@@ -1,12 +1,21 @@
+using DoAnCSharp.Views;
+using DoAnCSharp.Services;
+using Microsoft.Maui.Controls;
+using System.Threading.Tasks;
+
 namespace DoAnCSharp;
 
 public partial class App : Application
 {
-    public App(Views.AuthPage authPage)
+    // Bỏ các chữ "Views." và "Services.", chỉ nhận tên Class nhờ có các dòng using ở trên
+    public App(AuthPage authPage, DatabaseService dbService)
     {
-        InitializeComponent();
+        InitializeComponent(); // Giờ dòng này sẽ sáng lên, hết báo lỗi!
 
-        // Khởi động bằng màn hình Đăng nhập
+        // Chạy ngầm việc tạo bảng và nạp dữ liệu mẫu
+        Task.Run(async () => await dbService.SeedDataAsync());
+
+        // Đặt màn hình khởi động
         MainPage = authPage;
     }
 }

@@ -1,8 +1,8 @@
 using SQLite;
 using DoAnCSharp.Models;
-using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Maui.ApplicationModel;
 
@@ -12,21 +12,48 @@ public class DatabaseService
 {
     private const string DbFileName = "VinhKhanhTour.db3";
     private SQLiteAsyncConnection? _connection;
+    private readonly SemaphoreSlim _semaphore = new SemaphoreSlim(1, 1);
 
-    // Hàm khởi tạo CSDL
+    // 1. HÀM KHỞI TẠO CƠ BẢN (Tạo bảng và nạp User)
     private async Task InitAsync()
     {
-        if (_connection != null) return; // Đã khởi tạo rồi thì bỏ qua
+        await _semaphore.WaitAsync();
+        try
+        {
+            if (_connection != null) return;
 
-        // Tìm đường dẫn an toàn để lưu file trên điện thoại (Android/iOS)
-        var dbPath = Path.Combine(FileSystem.AppDataDirectory, DbFileName);
-        _connection = new SQLiteAsyncConnection(dbPath);
+            var dbPath = Path.Combine(FileSystem.AppDataDirectory, DbFileName);
+            _connection = new SQLiteAsyncConnection(dbPath);
 
-        // Tạo bảng AudioPOI trong file DB
-        await _connection.CreateTableAsync<AudioPOI>();
+            // Tạo các bảng
+            await _connection.CreateTableAsync<AudioPOI>();
+            await _connection.CreateTableAsync<User>();
 
-        // [SEED DATA] Nếu bảng trống (mở app lần đầu), tự động thêm 3 quán ốc mẫu vào
-        var count = await _connection.Table<AudioPOI>().CountAsync();
+            // Nạp dữ liệu User mặc định (nếu chưa có)
+            var userCount = await _connection.Table<User>().CountAsync();
+            if (userCount == 0)
+            {
+                var defaultUser = new User 
+                { 
+                    FullName = "Gastronome Vĩnh Khánh", 
+                    Email = "admin@vinhkhanh.com",
+                    Phone = "0909 123 456"
+                };
+                await _connection.InsertAsync(defaultUser);
+            }
+        }
+        finally
+        {
+            _semaphore.Release();
+        }
+    }
+
+    // 2. HÀM NẠP DỮ LIỆU QUÁN ĂN (Public để App.xaml.cs có thể gọi)
+    public async Task SeedDataAsync()
+    {
+        await InitAsync(); // Đảm bảo đã khởi tạo kết nối
+
+        var count = await _connection!.Table<AudioPOI>().CountAsync();
         if (count == 0)
         {
             var initialData = new List<AudioPOI>
@@ -35,15 +62,46 @@ public class DatabaseService
                 new AudioPOI { Name = "Ốc Đào 2", Description = "Ốc Đào nổi tiếng với các món ốc xào me đậm đà.", Lat = 10.7581, Lng = 106.7061, Radius = 50, Priority = 1, ImageAsset = "oc_dao2.webp" },
                 new AudioPOI { Name = "Ốc Vũ", Description = "Ốc Vũ là điểm đến lý tưởng cho món ốc mỡ xào tỏi.", Lat = 10.7578, Lng = 106.7058, Radius = 50, Priority = 2, ImageAsset = "dotnet_bot.png" }
             };
-            // Chèn 1 lúc cả danh sách vào DB
             await _connection.InsertAllAsync(initialData);
         }
     }
 
-    // Hàm gọi danh sách quán ốc ra ngoài để MapPage sử dụng
+    // 3. HÀM LẤY DANH SÁCH QUÁN ĂN (Cho Trang chủ và Bản đồ)
     public async Task<List<AudioPOI>> GetPOIsAsync()
     {
         await InitAsync();
         return await _connection!.Table<AudioPOI>().ToListAsync();
+    }
+
+    // 4. HÀM LẤY THÔNG TIN NGƯỜI DÙNG (Cho trang Cá nhân)
+    public async Task<User> GetOrCreateUserAsync(string email)
+    {
+        await InitAsync();
+        var user = await _connection!.Table<User>().Where(u => u.Email == email).FirstOrDefaultAsync();
+        
+        // Nếu user lần đầu đăng nhập, tạo luôn cho họ 1 hồ sơ
+        if (user == null)
+        {
+            user = new User 
+            { 
+                Email = email, 
+                FullName = "Người Dùng Mới", // Sẽ cho phép họ đổi tên sau
+                Phone = "Đang cập nhật",
+                Avatar = "dotnet_bot.png"
+            };
+            await _connection.InsertAsync(user);
+        }
+        return user;
+    }
+
+    // SỬA HÀM CŨ: Không lấy ông đầu tiên nữa, mà lấy đúng ông đang đăng nhập
+    public async Task<User?> GetCurrentUserAsync()
+    {
+        await InitAsync();
+        
+        // Lấy Email mà người dùng vừa gõ lúc nãy ở trang Login
+        string currentEmail = Microsoft.Maui.Storage.Preferences.Default.Get("CurrentUserEmail", "admin@vinhkhanh.com");
+        
+        return await _connection!.Table<User>().Where(u => u.Email == currentEmail).FirstOrDefaultAsync(); 
     }
 }

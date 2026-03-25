@@ -12,8 +12,6 @@ using System.Threading.Tasks;
 using Microsoft.Maui.ApplicationModel;
 using Microsoft.Maui.Devices.Sensors;
 using Microsoft.Maui.Media;
-
-// MỚI: Gọi các thư mục chứa Model và Service vào
 using DoAnCSharp.Models;
 using DoAnCSharp.Services;
 
@@ -21,8 +19,8 @@ namespace DoAnCSharp.Views;
 
 public partial class MapPage : ContentPage
 {
-    // MỚI: Khai báo dịch vụ Database và danh sách chứa dữ liệu
-    private DatabaseService _dbService = new DatabaseService();
+    // Dùng readonly và nhận qua Constructor (Dependency Injection)
+    private readonly DatabaseService _dbService;
     private List<AudioPOI> _pois = new();
 
     private IDispatcherTimer? _radarTimer;
@@ -32,14 +30,16 @@ public partial class MapPage : ContentPage
     private bool _isManualSelection = false; 
     private string _targetLang = "vi"; 
 
-    public MapPage()
+    // Constructor nhận DatabaseService từ hệ thống cung cấp
+    public MapPage(DatabaseService dbService)
     {
+        _dbService = dbService;
+
         try 
         {
             InitializeComponent();
             SetupMap();
             StartRadar();
-            // Lưu ý: Mình không gọi LoadPinsToMap ở đây nữa vì phải đợi Database nạp xong mới có Pin để vẽ
         }
         catch (Exception ex)
         {
@@ -47,22 +47,18 @@ public partial class MapPage : ContentPage
         }
     }
 
-    // MỚI: Hàm OnAppearing sẽ tự động chạy khi trang Bản đồ vừa hiển thị lên màn hình
     protected override async void OnAppearing()
     {
         base.OnAppearing();
         await LoadDataFromDatabaseAsync();
     }
 
-    // MỚI: Hàm "hút" dữ liệu từ SQLite
     private async Task LoadDataFromDatabaseAsync()
     {
         try
         {
-            // Lấy toàn bộ quán ốc từ CSDL
+            // Sử dụng dịch vụ được tiêm vào thay vì tạo mới
             _pois = await _dbService.GetPOIsAsync();
-            
-            // Có dữ liệu rồi mới đem ghim lên bản đồ
             LoadPinsToMap();
         }
         catch (Exception ex)
@@ -101,7 +97,6 @@ public partial class MapPage : ContentPage
         _radarTimer.Start();
     }
 
-    // --- LOGIC GPS THỰC TẾ ---
     private async Task CheckGeofenceAndPlayAudio()
     {
         try {

@@ -22,21 +22,25 @@ public static class MauiProgram
                 fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
             });
 
-        // 1. ĐĂNG KÝ DỊCH VỤ (Chỉ giữ lại những file thực sự tồn tại trong thư mục Services)
+        // 1. ĐĂNG KÝ DỊCH VỤ
         builder.Services.AddSingleton<ILanguageService, LanguageService>();
         builder.Services.AddSingleton<DatabaseService>();
-        builder.Services.AddSingleton<LocationService>(); // Sửa lỗi Ambiguous
+        builder.Services.AddSingleton<LocationService>(); 
         builder.Services.AddSingleton<IAuthService, AuthService>();
 
-        // 2. ĐĂNG KÝ VIEWMODELS (Chỉ giữ lại những file đang có)
+        // 2. ĐĂNG KÝ VIEWMODELS
         builder.Services.AddTransient<AuthViewModel>();
         builder.Services.AddSingleton<HomeViewModel>();
+        builder.Services.AddSingleton<MapViewModel>();
 
-        // 3. ĐĂNG KÝ CÁC TRANG 
-        builder.Services.AddTransient<Views.AuthPage>();
-        builder.Services.AddSingleton<Views.HomePage>();
-        builder.Services.AddSingleton<Views.MapPage>();
+        // 3. ĐĂNG KÝ CÁC TRANG (Đã XÓA SẠCH chữ "Views." và thêm ProfilePage)
+        builder.Services.AddTransient<AuthPage>();
+        builder.Services.AddSingleton<HomePage>();
+        builder.Services.AddSingleton<MapPage>();
+        builder.Services.AddTransient<ProfilePage>(); 
         builder.Services.AddSingleton<AppShell>();
+
+        builder.Services.AddTransient<ProfileViewModel>();
 
 #if DEBUG
         //builder.Logging.AddDebug();

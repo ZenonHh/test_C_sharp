@@ -1,9 +1,22 @@
+using DoAnCSharp.ViewModels;
+using Microsoft.Maui.Controls;
+
 namespace DoAnCSharp.Views;
 
 public partial class ProfilePage : ContentPage
 {
-    public ProfilePage()
+    private readonly ProfileViewModel _viewModel;
+
+    public ProfilePage(ProfileViewModel viewModel)
     {
         InitializeComponent();
+        _viewModel = viewModel;
+        BindingContext = _viewModel;
+    }
+
+    protected override async void OnAppearing()
+    {
+        base.OnAppearing();
+        await _viewModel.LoadUserProfileAsync();
     }
 }
