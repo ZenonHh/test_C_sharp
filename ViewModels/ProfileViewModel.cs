@@ -2,7 +2,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using DoAnCSharp.Models;
 using DoAnCSharp.Services;
-using System; // Bắt buộc phải có để dùng IServiceProvider
+using System;
 using System.Threading.Tasks;
 using Microsoft.Maui.Controls;
 
@@ -11,16 +11,20 @@ namespace DoAnCSharp.ViewModels;
 public partial class ProfileViewModel : ObservableObject
 {
     private readonly DatabaseService _dbService;
-    private readonly IServiceProvider _serviceProvider; // Khai báo công cụ "lấy" trang
+    private readonly IServiceProvider _serviceProvider;
+
+    // ĐÂY CHÍNH LÀ BIẾN "Lang" ĐỂ GIAO DIỆN LẤY CHỮ DỊCH
+    public ILanguageService Lang { get; }
 
     [ObservableProperty]
     private User? _currentUser;
 
-    // Sửa constructor: Nhận thêm IServiceProvider từ hệ thống
-    public ProfileViewModel(DatabaseService dbService, IServiceProvider serviceProvider)
+    // Tiêm các Service vào
+    public ProfileViewModel(DatabaseService dbService, IServiceProvider serviceProvider, ILanguageService langService)
     {
         _dbService = dbService;
         _serviceProvider = serviceProvider;
+        Lang = langService; // Gán giá trị để XAML có thể dùng
     }
 
     public async Task LoadUserProfileAsync()
@@ -29,9 +33,8 @@ public partial class ProfileViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void Logout() // Bỏ async Task đi vì đoạn dưới không cần await
+    private void Logout()
     {
-        // Chuyển trang đúng chuẩn DI (Không dùng chữ "new")
         if (Application.Current != null)
         {
             var authPage = _serviceProvider.GetService(typeof(Views.AuthPage)) as Views.AuthPage;
@@ -40,19 +43,35 @@ public partial class ProfileViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private async Task ChangeLanguage()
-    {
-        // Tạm thời hiển thị thông báo. Bạn có thể gọi ILanguageService vào đây sau để xử lý đổi ngôn ngữ thật.
-        if (Application.Current?.MainPage != null)
-        {
-            await Application.Current.MainPage.DisplayAlert("Đổi ngôn ngữ", "Tính năng đổi ngôn ngữ trong trang Cá nhân đang được hoàn thiện!", "OK");
-        }
-    }
-
-    [RelayCommand]
     private async Task EditProfile()
     {
         if (Application.Current?.MainPage != null)
             await Application.Current.MainPage.DisplayAlert("Thông báo", "Chức năng chỉnh sửa đang phát triển!", "OK");
+    }
+    [RelayCommand]
+    private async Task ChangeLanguage()
+    {
+        if (Application.Current?.MainPage != null)
+        {
+            // 1. Hiện bảng chọn ngôn ngữ
+            string action = await Application.Current.MainPage.DisplayActionSheet("Ngôn ngữ / Language", "Hủy", null, "Tiếng Việt", "English");
+            
+            // Nếu người dùng bấm Hủy hoặc ra ngoài thì bỏ qua
+            if (string.IsNullOrEmpty(action) || action == "Hủy") return;
+
+            // 2. Lấy mã ngôn ngữ
+            string langCode = action == "English" ? "en" : "vi";
+
+            // 3. Ra lệnh cho LanguageService đổi ngôn ngữ TOÀN APP
+            Lang.ChangeLanguage(langCode);
+        }
+    }
+    [RelayCommand]
+    private async Task OpenSettings()
+    {
+        if (Application.Current?.MainPage != null)
+        {
+            await Application.Current.MainPage.DisplayAlert("Thông báo", "Tính năng Cài đặt chung đang được phát triển!", "OK");
+        }
     }
 }

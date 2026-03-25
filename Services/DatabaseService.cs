@@ -10,7 +10,8 @@ namespace DoAnCSharp.Services;
 
 public class DatabaseService
 {
-    private const string DbFileName = "VinhKhanhTour.db3";
+    // Đã đổi tên file để hệ thống tạo DB mới chứa 15 quán ăn
+    private const string DbFileName = "VinhKhanhTour_Full.db3";
     private SQLiteAsyncConnection? _connection;
     private readonly SemaphoreSlim _semaphore = new SemaphoreSlim(1, 1);
 
@@ -48,7 +49,7 @@ public class DatabaseService
         }
     }
 
-    // 2. HÀM NẠP DỮ LIỆU QUÁN ĂN (Public để App.xaml.cs có thể gọi)
+    // 2. HÀM NẠP DỮ LIỆU 15 QUÁN ĂN (Public để App.xaml.cs có thể gọi)
     public async Task SeedDataAsync()
     {
         await InitAsync(); // Đảm bảo đã khởi tạo kết nối
@@ -58,9 +59,26 @@ public class DatabaseService
         {
             var initialData = new List<AudioPOI>
             {
-                new AudioPOI { Name = "Ốc Oanh", Description = "Chào mừng đến Ốc Oanh. Món chính là ốc hương xào bắp bơ.", Lat = 10.7600, Lng = 106.7000, Radius = 50, Priority = 1, ImageAsset = "oc_oanh.jpg" },
-                new AudioPOI { Name = "Ốc Đào 2", Description = "Ốc Đào nổi tiếng với các món ốc xào me đậm đà.", Lat = 10.7581, Lng = 106.7061, Radius = 50, Priority = 1, ImageAsset = "oc_dao2.webp" },
-                new AudioPOI { Name = "Ốc Vũ", Description = "Ốc Vũ là điểm đến lý tưởng cho món ốc mỡ xào tỏi.", Lat = 10.7578, Lng = 106.7058, Radius = 50, Priority = 2, ImageAsset = "dotnet_bot.png" }
+                // ---- THẾ GIỚI ỐC ----
+                new AudioPOI { Name = "Ốc Oanh", Address = "534 Vĩnh Khánh, Q.4", Description = "Quán ốc 'huyền thoại' đông nhất Vĩnh Khánh. Nổi tiếng với ốc hương rang muối ớt và càng ghẹ nướng.", Lat = 10.7595, Lng = 106.7045, Radius = 40, Priority = 1, ImageAsset = "oc_oanh.jpg" },
+                new AudioPOI { Name = "Ốc Vũ", Address = "37 Vĩnh Khánh, Q.4", Description = "Không gian siêu rộng, menu đa dạng và giá cả bình dân. Món khuyên dùng: Ốc tỏi nướng mỡ hành.", Lat = 10.7578, Lng = 106.7058, Radius = 40, Priority = 1, ImageAsset = "oc_vu.jpg" },
+                new AudioPOI { Name = "Ốc Nho", Address = "178 Vĩnh Khánh, Q.4", Description = "Chân ái của giới trẻ với các món ốc sốt phô mai kéo sợi, sốt trứng muối béo ngậy cực đỉnh.", Lat = 10.7582, Lng = 106.7052, Radius = 40, Priority = 1, ImageAsset = "dotnet_bot.png" },
+                new AudioPOI { Name = "Ốc Thảo", Address = "383 Vĩnh Khánh, Q.4", Description = "Quán lâu năm, giữ nguyên hương vị ốc truyền thống Sài Gòn. Nước mắm gừng pha cực ngon.", Lat = 10.7590, Lng = 106.7042, Radius = 40, Priority = 1, ImageAsset = "dotnet_bot.png" },
+                new AudioPOI { Name = "Ốc Sóc", Address = "D58 Vĩnh Khánh, Q.4", Description = "Nổi bật với món nghêu hấp sả ớt cay nồng và ốc móng tay xào rau muống.", Lat = 10.7587, Lng = 106.7048, Radius = 40, Priority = 1, ImageAsset = "dotnet_bot.png" },
+                new AudioPOI { Name = "Ốc Tuyết", Address = "430 Vĩnh Khánh, Q.4", Description = "Quán bình dân nhưng chất lượng tuyệt vời, phục vụ nhanh nhẹn, các món xào me rất đậm đà.", Lat = 10.7585, Lng = 106.7032, Radius = 40, Priority = 1, ImageAsset = "oc_tuyet.jpg" },
+                new AudioPOI { Name = "Ốc Đào 2", Address = "Vĩnh Khánh, P.4, Q.4", Description = "Thương hiệu ốc lâu đời, nêm nếm theo khẩu vị đậm đà đặc trưng, ốc xào sa tế cay xé lưỡi.", Lat = 10.7581, Lng = 106.7061, Radius = 40, Priority = 1, ImageAsset = "oc_dao.jpg" },
+
+                // ---- LẨU & NƯỚNG ----
+                new AudioPOI { Name = "Quán Nướng Chilli", Address = "232 Vĩnh Khánh, Q.4", Description = "Thiên đường hàu nướng với hơn 20 loại sốt khác nhau, hải sản nướng ngói thơm lừng.", Lat = 10.7586, Lng = 106.7055, Radius = 50, Priority = 2, ImageAsset = "dotnet_bot.png" },
+                new AudioPOI { Name = "Lẩu Bò Khu Nhà Cháy", Address = "Chung cư Đoàn Văn Bơ (Gần Vĩnh Khánh)", Description = "Lẩu bò gia truyền nước dùng ngọt thanh từ xương, bò viên tự làm dai giòn sừn sựt.", Lat = 10.7590, Lng = 106.7025, Radius = 50, Priority = 2, ImageAsset = "lau_bo.jpg" },
+                new AudioPOI { Name = "Sườn Nướng Muối Ớt", Address = "Dọc đường Vĩnh Khánh, Q.4", Description = "Sườn heo nướng tảng tẩm ớt cay nồng, ăn kèm đồ chua giải ngấy cực kỳ bắt bia.", Lat = 10.7588, Lng = 106.7040, Radius = 40, Priority = 2, ImageAsset = "suon_nuong.jpg" },
+                new AudioPOI { Name = "Khèn BBQ - Nướng Ngói", Address = "165 Vĩnh Khánh, Q.4", Description = "Thịt được nướng trên ngói đỏ giúp giữ độ ngọt, không bị ám khói than, tẩm ướp chuẩn vị Tây Bắc.", Lat = 10.7592, Lng = 106.7038, Radius = 40, Priority = 2, ImageAsset = "dotnet_bot.png" },
+                new AudioPOI { Name = "Lẩu Dê Dũng Mập", Address = "Đầu đường Vĩnh Khánh", Description = "Lẩu dê nấu chao thơm phức, thịt dê núi mềm ngọt, không bị hôi, ăn kèm rau rừng.", Lat = 10.7602, Lng = 106.7049, Radius = 50, Priority = 2, ImageAsset = "dotnet_bot.png" },
+
+                // ---- ĂN VẶT & MÓN KHÁC ----
+                new AudioPOI { Name = "Phá Lấu Cô Oanh", Address = "Đoạn giao Tôn Đản - Vĩnh Khánh", Description = "Phá lấu bò nấu nước cốt dừa béo ngậy, ăn kèm bánh mì nóng giòn chấm mắm me chua ngọt.", Lat = 10.7570, Lng = 106.7065, Radius = 30, Priority = 3, ImageAsset = "dotnet_bot.png" },
+                new AudioPOI { Name = "Sushi Viên Vĩnh Khánh", Address = "Dọc vỉa hè Vĩnh Khánh", Description = "Sushi lề đường giá học sinh sinh viên nhưng cá hồi, trứng cuộn rất tươi và sạch sẽ.", Lat = 10.7598, Lng = 106.7042, Radius = 30, Priority = 3, ImageAsset = "dotnet_bot.png" },
+                new AudioPOI { Name = "Trái Cây Tô & Chè", Address = "Giữa phố Vĩnh Khánh", Description = "Tráng miệng mát lạnh giải nhiệt sau khi ăn đồ nướng cay nóng, trái cây xô ngập tràn sữa chua.", Lat = 10.7584, Lng = 106.7050, Radius = 30, Priority = 3, ImageAsset = "dotnet_bot.png" }
             };
             await _connection.InsertAllAsync(initialData);
         }
@@ -94,7 +112,7 @@ public class DatabaseService
         return user;
     }
 
-    // SỬA HÀM CŨ: Không lấy ông đầu tiên nữa, mà lấy đúng ông đang đăng nhập
+    // 5. Lấy User đang đăng nhập
     public async Task<User?> GetCurrentUserAsync()
     {
         await InitAsync();
@@ -104,7 +122,8 @@ public class DatabaseService
         
         return await _connection!.Table<User>().Where(u => u.Email == currentEmail).FirstOrDefaultAsync(); 
     }
-    // 1. HÀM ĐĂNG KÝ (Tạo tài khoản mới)
+
+    // 6. HÀM ĐĂNG KÝ (Tạo tài khoản mới)
     public async Task<bool> RegisterUserAsync(string fullName, string email, string password)
     {
         await InitAsync();
@@ -128,7 +147,7 @@ public class DatabaseService
         return result > 0; // Trả về true nếu thêm thành công
     }
 
-    // 2. HÀM ĐĂNG NHẬP (Kiểm tra đúng Email và Mật khẩu)
+    // 7. HÀM ĐĂNG NHẬP (Kiểm tra đúng Email và Mật khẩu)
     public async Task<User?> LoginUserAsync(string email, string password)
     {
         await InitAsync();

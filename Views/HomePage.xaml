@@ -15,12 +15,6 @@
                     <Label Text="📍 Phố Ẩm Thực Vĩnh Khánh" FontSize="14" TextColor="#7F8C8D" FontAttributes="Bold" />
                     <Label x:Name="WelcomeLabel" Text="{Binding Lang.T[welcome]}" FontSize="24" FontAttributes="Bold" TextColor="#2C3E50" Margin="0,5,0,0" />
                 </VerticalStackLayout>
-                <Border Grid.Column="1" StrokeShape="RoundRectangle 25" HeightRequest="50" WidthRequest="50" StrokeThickness="0" BackgroundColor="#2C3E50">
-                    <Border.GestureRecognizers>
-                        <TapGestureRecognizer Tapped="OnChangeLangClicked"/>
-                    </Border.GestureRecognizers>
-                    <Label Text="🌐" HorizontalOptions="Center" VerticalOptions="Center" FontSize="18"/>
-                </Border>
             </Grid>
 
             <Border Margin="20,0" StrokeShape="RoundRectangle 15" BackgroundColor="White" StrokeThickness="0" HeightRequest="55">

@@ -22,9 +22,10 @@ namespace DoAnCSharp.Views;
 
 public partial class MapPage : ContentPage
 {
+    // --- KHAI BÁO BIẾN ---
     private readonly DatabaseService _dbService;
+    private readonly ILanguageService _langService; // Cung cấp khả năng đổi ngôn ngữ toàn App
     private List<AudioPOI> _pois = new();
-
     private IDispatcherTimer? _radarTimer;
     private CancellationTokenSource? _ttsCancellationTokenSource;
     private AudioPOI? _currentPoi;
@@ -32,9 +33,11 @@ public partial class MapPage : ContentPage
     private bool _isManualSelection = false;
     private string _targetLang = "vi";
 
-    public MapPage(DatabaseService dbService)
+    // --- CONSTRUCTOR ---
+    public MapPage(DatabaseService dbService, ILanguageService langService)
     {
         _dbService = dbService;
+        _langService = langService; // ĐÃ FIX CS8618: Gán giá trị cho _langService
 
         try
         {
@@ -54,6 +57,7 @@ public partial class MapPage : ContentPage
         await LoadDataFromDatabaseAsync();
     }
 
+    // --- LOGIC DỮ LIỆU & DỊCH THUẬT ---
     private async Task LoadDataFromDatabaseAsync()
     {
         try
@@ -67,7 +71,6 @@ public partial class MapPage : ContentPage
         }
     }
 
-    // ĐÃ FIX: Thêm User-Agent để Google Translate API không chặn
     private async Task<string> TranslateTextAsync(string text, string toLang)
     {
         if (string.IsNullOrEmpty(text) || toLang == "vi") return text;
@@ -83,6 +86,7 @@ public partial class MapPage : ContentPage
         catch { return text; }
     }
 
+    // --- LOGIC BẢN ĐỒ & RADAR ---
     private void SetupMap()
     {
         if (foodMapView.Map == null)
@@ -110,7 +114,6 @@ public partial class MapPage : ContentPage
         try
         {
             if (_isManualSelection) return;
-
             var request = new GeolocationRequest(GeolocationAccuracy.Medium, TimeSpan.FromSeconds(2));
             var userLoc = await Geolocation.Default.GetLocationAsync(request);
 
@@ -141,6 +144,7 @@ public partial class MapPage : ContentPage
         catch { }
     }
 
+    // --- LOGIC ÂM THANH & NGÔN NGỮ ---
     private void StopAudio()
     {
         _ttsCancellationTokenSource?.Cancel();
@@ -152,7 +156,8 @@ public partial class MapPage : ContentPage
         });
     }
 
-    private async void OnLanguageClicked(object sender, EventArgs e)
+    // ĐÃ FIX CS0111: Đây là hàm OnLanguageClicked duy nhất
+    private async void OnLanguageClicked(object? sender, EventArgs e)
     {
         string action = await DisplayActionSheet("Ngôn ngữ / Language", "Hủy", null, "Tiếng Việt", "English", "日本語", "한국어");
         if (string.IsNullOrEmpty(action) || action == "Hủy") return;
@@ -162,9 +167,11 @@ public partial class MapPage : ContentPage
         else if (action == "日本語") _targetLang = "ja";
         else if (action == "한국어") _targetLang = "ko";
 
+        // GỌI LỆNH DỊCH TOÀN BỘ APP TỨC THÌ
+        _langService.ChangeLanguage(_targetLang);
+
         if (_currentPoi != null)
         {
-            // Nếu đang mở thẻ chi tiết thì dịch thẻ chi tiết, nếu đang phát audio thì dịch audio
             if (PoiDetailCard.IsVisible)
             {
                 _ = UpdateDetailCardAsync(_currentPoi);
@@ -184,7 +191,7 @@ public partial class MapPage : ContentPage
         MainThread.BeginInvokeOnMainThread(() => {
             TranslationLoader.IsVisible = true;
             TranslationLoader.IsRunning = true;
-            AudioText.Text = _targetLang == "vi" ? poi.Name : "Translating...";
+            AudioText.Text = "Translating..."; 
             AudioPlayerUI.IsVisible = true;
             PoiDetailCard.IsVisible = false;
             PlayStopButton.Text = "⏹";
@@ -208,10 +215,19 @@ public partial class MapPage : ContentPage
             var locales = await TextToSpeech.Default.GetLocalesAsync();
             Locale? locale = null;
 
-            if (_targetLang == "en") locale = locales.FirstOrDefault(l => l.Language.Equals("en-US", StringComparison.OrdinalIgnoreCase)) ?? locales.FirstOrDefault(l => l.Language.StartsWith("en", StringComparison.OrdinalIgnoreCase));
-            else if (_targetLang == "ja") locale = locales.FirstOrDefault(l => l.Language.Equals("ja-JP", StringComparison.OrdinalIgnoreCase)) ?? locales.FirstOrDefault(l => l.Language.StartsWith("ja", StringComparison.OrdinalIgnoreCase));
-            else if (_targetLang == "ko") locale = locales.FirstOrDefault(l => l.Language.Equals("ko-KR", StringComparison.OrdinalIgnoreCase)) ?? locales.FirstOrDefault(l => l.Language.StartsWith("ko", StringComparison.OrdinalIgnoreCase));
-            else locale = locales.FirstOrDefault(l => l.Language.Equals("vi-VN", StringComparison.OrdinalIgnoreCase)) ?? locales.FirstOrDefault(l => l.Language.StartsWith("vi", StringComparison.OrdinalIgnoreCase));
+            if (_targetLang == "en") {
+                locale = locales.FirstOrDefault(l => l.Language.Equals("en-US", StringComparison.OrdinalIgnoreCase)) 
+                         ?? locales.FirstOrDefault(l => l.Language.Contains("en", StringComparison.OrdinalIgnoreCase));
+            }
+            else if (_targetLang == "ja") {
+                locale = locales.FirstOrDefault(l => l.Language.Contains("ja", StringComparison.OrdinalIgnoreCase));
+            }
+            else if (_targetLang == "ko") {
+                locale = locales.FirstOrDefault(l => l.Language.Contains("ko", StringComparison.OrdinalIgnoreCase));
+            }
+            else {
+                locale = locales.FirstOrDefault(l => l.Language.Contains("vi", StringComparison.OrdinalIgnoreCase));
+            }
 
             await TextToSpeech.Default.SpeakAsync(tDesc, new SpeechOptions { Locale = locale }, _ttsCancellationTokenSource.Token);
         }
@@ -248,9 +264,11 @@ public partial class MapPage : ContentPage
         string tDesc = await TranslateTextAsync(poi.Description, _targetLang);
 
         MainThread.BeginInvokeOnMainThread(() => {
-            DetailName.Text = tName;
-            DetailDescription.Text = tDesc;
+            DetailName.Text = tName; 
+            DetailDescription.Text = tDesc; 
             DetailImage.Source = poi.ImageAsset;
+            if (PlayReviewButton != null)
+                PlayReviewButton.Text = _targetLang == "vi" ? "🔊 Nghe Review" : "🔊 Listen Review";
         });
     }
 
@@ -261,7 +279,12 @@ public partial class MapPage : ContentPage
         foodMapView.Pins.Clear();
         foreach (var poi in _pois)
         {
-            foodMapView.Pins.Add(new Mapsui.UI.Maui.Pin(foodMapView) { Label = poi.Name, Position = new Mapsui.UI.Maui.Position(poi.Lat, poi.Lng), Tag = poi, Color = Microsoft.Maui.Graphics.Colors.Red });
+            foodMapView.Pins.Add(new Mapsui.UI.Maui.Pin(foodMapView) { 
+                Label = poi.Name, 
+                Position = new Mapsui.UI.Maui.Position(poi.Lat, poi.Lng), 
+                Tag = poi, 
+                Color = Microsoft.Maui.Graphics.Colors.Red 
+            });
         }
         foodMapView.PinClicked -= OnMapPinClicked;
         foodMapView.PinClicked += OnMapPinClicked;

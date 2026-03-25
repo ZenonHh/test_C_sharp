@@ -9,7 +9,8 @@ public interface ILanguageService : INotifyPropertyChanged
     string T(string key);
     void ChangeLanguage(string langCode);
     // SỬA LỖI CS1061: Thêm khai báo hàm khởi tạo
-    Task Initialize(); 
+    Task Initialize();
+    string this[string key] { get; }
 }
 
 public class LanguageService : ILanguageService
@@ -19,6 +20,7 @@ public class LanguageService : ILanguageService
     private string _currentLocale = "vi";
     public string CurrentLocale => _currentLocale;
 
+    public string this[string key] => T(key);
     private readonly Dictionary<string, Dictionary<string, string>> _localizedValues = new()
     {
         {
