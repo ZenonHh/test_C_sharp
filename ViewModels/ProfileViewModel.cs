@@ -53,16 +53,19 @@ public partial class ProfileViewModel : ObservableObject
     {
         if (Application.Current?.MainPage != null)
         {
-            // 1. Hiện bảng chọn ngôn ngữ
-            string action = await Application.Current.MainPage.DisplayActionSheet("Ngôn ngữ / Language", "Hủy", null, "Tiếng Việt", "English");
+            // 1. Hiện bảng chọn 4 ngôn ngữ giống hệt bên trang Bản đồ
+            string action = await Application.Current.MainPage.DisplayActionSheet("Ngôn ngữ / Language", "Hủy", null, "Tiếng Việt", "English", "日本語", "한국어");
             
             // Nếu người dùng bấm Hủy hoặc ra ngoài thì bỏ qua
             if (string.IsNullOrEmpty(action) || action == "Hủy") return;
 
             // 2. Lấy mã ngôn ngữ
-            string langCode = action == "English" ? "en" : "vi";
+            string langCode = "vi";
+            if (action == "English") langCode = "en";
+            else if (action == "日本語") langCode = "ja";
+            else if (action == "한국어") langCode = "ko";
 
-            // 3. Ra lệnh cho LanguageService đổi ngôn ngữ TOÀN APP
+            // 3. Ra lệnh cho LanguageService đổi ngôn ngữ TOÀN APP (Nó sẽ tự lưu vào Preferences)
             Lang.ChangeLanguage(langCode);
         }
     }

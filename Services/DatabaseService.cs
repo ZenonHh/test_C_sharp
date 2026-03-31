@@ -17,6 +17,7 @@ public class DatabaseService
 
     // 1. HÀM KHỞI TẠO CƠ BẢN (Tạo bảng và nạp User)
     private async Task InitAsync()
+    
     {
         await _semaphore.WaitAsync();
         try
@@ -27,6 +28,7 @@ public class DatabaseService
             _connection = new SQLiteAsyncConnection(dbPath);
 
             // Tạo các bảng
+            await _connection.CreateTableAsync<PlayHistory>();
             await _connection.CreateTableAsync<AudioPOI>();
             await _connection.CreateTableAsync<User>();
 

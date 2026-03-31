@@ -12,16 +12,17 @@
             Shell.TabBarTitleColor="#FF4757"
             Shell.TabBarUnselectedColor="#95A5A6">
 
-        <Tab Title="🏠 Trang chủ">
+        <Tab Title="{Binding [home]}">
             <ShellContent ContentTemplate="{DataTemplate views:HomePage}" />
         </Tab>
 
-        <Tab Title="🗺️ Bản đồ" Route="MapTab">
+        <Tab Title="{Binding [map]}" Route="MapTab">
             <ShellContent ContentTemplate="{DataTemplate views:MapPage}" />
         </Tab>
 
-        <Tab Title="👤 Cá nhân">
+        <Tab Title="{Binding [profile]}">
             <ShellContent ContentTemplate="{DataTemplate views:ProfilePage}" />
         </Tab>
+        
     </TabBar>
 </Shell>

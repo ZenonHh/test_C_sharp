@@ -1,9 +1,15 @@
+using DoAnCSharp.Services;
+
 namespace DoAnCSharp;
 
 public partial class AppShell : Shell
 {
-	public AppShell()
-	{
-		InitializeComponent();
-	}
+    // ĐÃ SỬA: Thêm tham số ILanguageService
+    public AppShell(ILanguageService langService)
+    {
+        InitializeComponent();
+        
+        // Gán LanguageService làm nguồn dữ liệu cho giao diện
+        BindingContext = langService;
+    }
 }

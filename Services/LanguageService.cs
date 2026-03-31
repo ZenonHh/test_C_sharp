@@ -27,10 +27,11 @@ public class LanguageService : ILanguageService
             "vi", new Dictionary<string, string>
             {
                 { "app_title", "Vĩnh Khánh Food Tour" },
-                { "home", "Trang chủ" },
+                { "home", "🏠 Trang chủ" },
                 { "search", "Tìm kiếm" },
-                { "map", "Bản đồ" },
-                { "profile", "Tôi" },
+                { "search_hint", "Tìm quán ăn, món ốc..." },
+                { "map", " 🗺️Bản đồ" },
+                { "profile", "👤 Tôi" },
                 { "logout", "ĐĂNG XUẤT" },
                 { "login", "ĐĂNG NHẬP" },
                 { "hint_email", "Nhập số điện thoại/email" },
@@ -55,10 +56,11 @@ public class LanguageService : ILanguageService
             "en", new Dictionary<string, string>
             {
                 { "app_title", "Vinh Khanh Food Tour" },
-                { "home", "Home" },
+                { "home", "🏠 Home" },
                 { "search", "Search" },
-                { "map", "Map" },
-                { "profile", "Me" },
+                { "search_hint", "Find restaurants, snails..." },
+                { "map", " 🗺️Map" },
+                { "profile", "👤 Me" },
                 { "logout", "LOGOUT" },
                 { "login", "LOGIN" },
                 { "hint_email", "Enter phone/email" },

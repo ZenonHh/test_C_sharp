@@ -2,7 +2,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using DoAnCSharp.Services;
 using DoAnCSharp;
-using System; // Bắt buộc phải có using System để dùng IServiceProvider
+using System; 
 using System.Threading.Tasks;
 using Microsoft.Maui.Controls;
 
@@ -24,7 +24,7 @@ public partial class AuthViewModel : ObservableObject
     private string _password = string.Empty;
 #pragma warning restore MVVMTK0045
 
-    // SỬA: Phải nhận cả 3 công cụ vào Constructor
+    // Phải nhận cả 3 công cụ vào Constructor
     public AuthViewModel(IAuthService authService, DatabaseService dbService, IServiceProvider serviceProvider)
     {
         _authService = authService;
@@ -57,11 +57,19 @@ public partial class AuthViewModel : ObservableObject
                 await _authService.SetLoggedInAsync(true);
             }
 
-            // CHUYỂN GIAO DIỆN: Vào App chính
+            // 3. CHUYỂN GIAO DIỆN: Vào App chính (ĐÃ SỬA LỖI Ở ĐÂY)
             if (Application.Current != null)
             {
-                Application.Current.MainPage = new AppShell();
-                await Shell.Current.GoToAsync("//MapTab");
+                // Gọi AppShell ra thông qua service provider thay vì new AppShell()
+                var appShell = _serviceProvider.GetService(typeof(AppShell)) as AppShell;
+                
+                if (appShell != null)
+                {
+                    Application.Current.MainPage = appShell;
+                    // Chờ một chút để Shell render xong giao diện rồi mới điều hướng
+                    await Task.Delay(100); 
+                    await Shell.Current.GoToAsync("//MapTab");
+                }
             }
         }
         else // Nếu sai Email hoặc Mật khẩu
@@ -71,7 +79,7 @@ public partial class AuthViewModel : ObservableObject
         }
     }
 
-    // THÊM: Hàm để bấm nút "Đăng ký ngay" chuyển sang trang RegisterPage
+    // Hàm để bấm nút "Đăng ký ngay" chuyển sang trang RegisterPage
     [RelayCommand]
     private void GoToRegister()
     {

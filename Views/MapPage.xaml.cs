@@ -31,7 +31,6 @@ public partial class MapPage : ContentPage
     private AudioPOI? _currentPoi;
     private bool _isPlaying = false;
     private bool _isManualSelection = false;
-    private string _targetLang = "vi";
 
     // --- CONSTRUCTOR ---
     public MapPage(DatabaseService dbService, ILanguageService langService)
@@ -94,7 +93,14 @@ public partial class MapPage : ContentPage
             foodMapView.Map = new Mapsui.Map();
         }
         foodMapView.Map.Layers.Clear();
-        var tileSource = new HttpTileSource(new GlobalSphericalMercator(), "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png", new[] { "a", "b", "c", "d" }, name: "CartoPositron");
+        
+        // ĐÃ SỬA: Đổi sang link OpenStreetMap để bản đồ có màu
+        var tileSource = new HttpTileSource(
+            new GlobalSphericalMercator(), 
+            "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", 
+            new[] { "a", "b", "c" }, 
+            name: "OpenStreetMap");
+            
         foodMapView.Map.Layers.Add(new TileLayer(tileSource));
         var center = SphericalMercator.FromLonLat(106.7000, 10.7600);
         foodMapView.Map.Home = n => n.CenterOnAndZoomTo(new MPoint(center.x, center.y), 2);
@@ -162,13 +168,13 @@ public partial class MapPage : ContentPage
         string action = await DisplayActionSheet("Ngôn ngữ / Language", "Hủy", null, "Tiếng Việt", "English", "日本語", "한국어");
         if (string.IsNullOrEmpty(action) || action == "Hủy") return;
 
-        if (action == "Tiếng Việt") _targetLang = "vi";
-        else if (action == "English") _targetLang = "en";
-        else if (action == "日本語") _targetLang = "ja";
-        else if (action == "한국어") _targetLang = "ko";
+        string targetLang = "vi";
+        if (action == "English") targetLang = "en";
+        else if (action == "日本語") targetLang = "ja";
+        else if (action == "한국어") targetLang = "ko";
 
         // GỌI LỆNH DỊCH TOÀN BỘ APP TỨC THÌ
-        _langService.ChangeLanguage(_targetLang);
+        _langService.ChangeLanguage(targetLang);
 
         if (_currentPoi != null)
         {
@@ -197,14 +203,14 @@ public partial class MapPage : ContentPage
             PlayStopButton.Text = "⏹";
         });
 
-        string tName = await TranslateTextAsync(poi.Name, _targetLang);
-        string tDesc = await TranslateTextAsync(poi.Description, _targetLang);
+        string tName = await TranslateTextAsync(poi.Name, _langService.CurrentLocale);
+        string tDesc = await TranslateTextAsync(poi.Description, _langService.CurrentLocale);
 
         MainThread.BeginInvokeOnMainThread(() => {
             TranslationLoader.IsRunning = false;
             TranslationLoader.IsVisible = false;
             AudioText.Text = tName;
-            AudioStatusLabel.Text = _targetLang == "vi" ? "Đang phát review:" : "Playing review:";
+            AudioStatusLabel.Text = _langService.CurrentLocale == "vi" ? "Đang phát review:" : "Playing review:";
         });
 
         _ttsCancellationTokenSource?.Cancel();
@@ -215,14 +221,14 @@ public partial class MapPage : ContentPage
             var locales = await TextToSpeech.Default.GetLocalesAsync();
             Locale? locale = null;
 
-            if (_targetLang == "en") {
+            if (_langService.CurrentLocale == "en") {
                 locale = locales.FirstOrDefault(l => l.Language.Equals("en-US", StringComparison.OrdinalIgnoreCase)) 
                          ?? locales.FirstOrDefault(l => l.Language.Contains("en", StringComparison.OrdinalIgnoreCase));
             }
-            else if (_targetLang == "ja") {
+            else if (_langService.CurrentLocale == "ja") {
                 locale = locales.FirstOrDefault(l => l.Language.Contains("ja", StringComparison.OrdinalIgnoreCase));
             }
-            else if (_targetLang == "ko") {
+            else if (_langService.CurrentLocale == "ko") {
                 locale = locales.FirstOrDefault(l => l.Language.Contains("ko", StringComparison.OrdinalIgnoreCase));
             }
             else {
@@ -260,15 +266,15 @@ public partial class MapPage : ContentPage
             AudioPlayerUI.IsVisible = false;
         });
 
-        string tName = await TranslateTextAsync(poi.Name, _targetLang);
-        string tDesc = await TranslateTextAsync(poi.Description, _targetLang);
+        string tName = await TranslateTextAsync(poi.Name, _langService.CurrentLocale);
+        string tDesc = await TranslateTextAsync(poi.Description, _langService.CurrentLocale);
 
         MainThread.BeginInvokeOnMainThread(() => {
             DetailName.Text = tName; 
             DetailDescription.Text = tDesc; 
             DetailImage.Source = poi.ImageAsset;
             if (PlayReviewButton != null)
-                PlayReviewButton.Text = _targetLang == "vi" ? "🔊 Nghe Review" : "🔊 Listen Review";
+                PlayReviewButton.Text = _langService.CurrentLocale == "vi" ? "🔊 Nghe Review" : "🔊 Listen Review";
         });
     }
 
