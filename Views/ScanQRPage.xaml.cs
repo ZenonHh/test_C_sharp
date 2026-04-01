@@ -34,27 +34,24 @@ namespace DoAnCSharp.Views
         }
 
         private void CameraBarcodeReaderView_BarcodesDetected(object sender, BarcodeDetectionEventArgs e)
-{
-    var result = e.Results?.FirstOrDefault();
-    if (result != null)
-    {
-        // 1. Dừng quét ngay để tránh lặp
-        cameraBarcodeReaderView.IsDetecting = false;
-        
-        // 2. Rung nhẹ một cái cho "pro"
-        try { Vibration.Default.Vibrate(TimeSpan.FromMilliseconds(100)); } catch { }
-
-        Dispatcher.Dispatch(async () =>
         {
-            string qrValue = result.Value; // Đây là tên quán từ mã QR
-            
-            // 3. Gửi tin nhắn chứa tên quán về MapPage
-            WeakReferenceMessenger.Default.Send(new QrScannedMessage(qrValue));
-            
-            // 4. Quay lại trang bản đồ
-            await Navigation.PopAsync();
-        });
-    }
-}
+            var result = e.Results?.FirstOrDefault();
+            if (result != null)
+            {
+                // Dừng quét ngay khi bắt được mã
+                cameraBarcodeReaderView.IsDetecting = false;
+                
+                Dispatcher.Dispatch(async () =>
+                {
+                    string qrValue = result.Value; 
+                    
+                    // Gửi tin nhắn chứa nội dung QR đi
+                    WeakReferenceMessenger.Default.Send(new QrScannedMessage(qrValue));
+                    
+                    // Quay về trang bản đồ
+                    await Navigation.PopAsync();
+                });
+            }
+        }
     }
 }

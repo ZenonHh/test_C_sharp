@@ -25,7 +25,7 @@ public partial class MapPage : ContentPage, IQueryAttributable
 {
     private readonly DatabaseService _dbService;
     private List<AudioPOI> _pois = new();
-
+private readonly ILanguageService _langService; // Thêm dòng này
     private IDispatcherTimer? _radarTimer;
     private CancellationTokenSource? _ttsCancellationTokenSource;
     private AudioPOI? _currentPoi;
@@ -162,7 +162,7 @@ WeakReferenceMessenger.Default.Register<QrScannedMessage>(this, (r, m) =>
         foodMapView.Map.Home = n => n.CenterOnAndZoomTo(new MPoint(center.x, center.y), 2);
         foodMapView.MyLocationEnabled = true;
     }
-}
+
     private void StartRadar()
     {
         _radarTimer = Dispatcher.CreateTimer();
@@ -246,7 +246,7 @@ WeakReferenceMessenger.Default.Register<QrScannedMessage>(this, (r, m) =>
         _currentPoi = poi;
         _isPlaying = true;
 
-        _dbService.SavePlayHistoryAsync(poi);
+        await _dbService.SavePlayHistoryAsync(poi);
 
         MainThread.BeginInvokeOnMainThread(() => {
             TranslationLoader.IsVisible = true;
@@ -473,4 +473,16 @@ WeakReferenceMessenger.Default.Register<QrScannedMessage>(this, (r, m) =>
             });
         }
     }
+    // Đảm bảo chữ C trong Clicked phải VIẾT HOA
+private async void OnScanQRClicked(object sender, EventArgs e) 
+{
+    try 
+    {
+        await Navigation.PushAsync(new ScanQRPage()); 
+    }
+    catch (Exception ex) 
+    {
+        await DisplayAlert("Lỗi", "Không thể mở camera: " + ex.Message, "OK"); 
+    }
+}
 }

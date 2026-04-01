@@ -48,7 +48,7 @@
         </Border>
 
         <VerticalStackLayout VerticalOptions="Start" HorizontalOptions="End" Margin="0, 110, 15, 0" Spacing="12" ZIndex="1">
-            <Button Text="📷" FontSize="16" Clicked="OnScanQRClicked" BackgroundColor="White" CornerRadius="19" WidthRequest="38" HeightRequest="38" Padding="0">
+            <Button Text="📷" Clicked="OnScanQRClicked" BackgroundColor="White" CornerRadius="19" WidthRequest="38" HeightRequest="38" Padding="0">
                 <Button.Shadow>
                     <Shadow Brush="Black" Offset="0,2" Opacity="0.2" />
                 </Button.Shadow>
