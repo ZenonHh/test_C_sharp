@@ -17,6 +17,7 @@ using System.Net.Http;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using CommunityToolkit.Mvvm.Messaging;
 
 namespace DoAnCSharp.Views;
 
@@ -32,23 +33,81 @@ public partial class MapPage : ContentPage
     private bool _isPlaying = false;
     private bool _isManualSelection = false;
 
-    // --- CONSTRUCTOR ---
-    public MapPage(DatabaseService dbService, ILanguageService langService)
+// Hàm hỗ trợ loại bỏ dấu tiếng Việt để so khớp dễ hơn
+private string RemoveSign(string str)
+{
+    if (string.IsNullOrEmpty(str)) return "";
+    return new string(str.Normalize(System.Text.NormalizationForm.FormD)
+        .Where(c => System.Globalization.CharUnicodeInfo.GetUnicodeCategory(c) 
+        != System.Globalization.CharUnicodeInfo.GetUnicodeCategory('\u0300')) // loại bỏ dấu
+        .ToArray()).Normalize(System.Text.NormalizationForm.FormC).ToLower();
+}
+private async void OnScanQRClicked(object? sender, EventArgs e)
     {
-        _dbService = dbService;
-        _langService = langService; // ĐÃ FIX CS8618: Gán giá trị cho _langService
-
-        try
+        try 
         {
-            InitializeComponent();
-            SetupMap();
-            StartRadar();
+            // dừng âm thanh nếu đang phát trước khi chuyển trang cho đỡ ồn
+            StopAudio(); 
+            
+            // chuyển sang trang quét qr đã đăng ký trong AppShell
+            await Shell.Current.GoToAsync(nameof(ScanQRPage));
         }
         catch (Exception ex)
         {
-            Dispatcher.Dispatch(async () => await DisplayAlert("LỖI KHỞI TẠO", ex.Message, "OK"));
+            await DisplayAlert("lỗi", "không thể mở camera: " + ex.Message, "ok");
         }
     }
+    // --- CONSTRUCTOR ---
+    public MapPage(DatabaseService dbService, ILanguageService langService)
+{
+    _dbService = dbService;
+    _langService = langService;
+
+    try
+    {
+        InitializeComponent();
+        SetupMap();
+        StartRadar();
+
+        // --- Đăng ký nhận dữ liệu từ QR bằng WeakReferenceMessenger ---
+        // Đăng ký Messenger trong Constructor của MapPage
+WeakReferenceMessenger.Default.Register<QrScannedMessage>(this, (r, m) =>
+{
+    string scannedName = m.Value;
+
+    // Tìm quán trong danh sách _pois dựa trên tên quét được
+    var foundPoi = _pois.FirstOrDefault(p => p.Name != null && 
+                                       p.Name.Equals(scannedName, StringComparison.OrdinalIgnoreCase));
+
+    if (foundPoi != null)
+    {
+        MainThread.BeginInvokeOnMainThread(async () =>
+        {
+            // Tắt chế độ tự động của Radar để không bị âm thanh ghi đè
+            _isManualSelection = true;
+            StopAudio(); 
+            
+            // Hiển thị card thông tin và nạp ảnh/mô tả của quán đó
+            await UpdateDetailCardAsync(foundPoi);
+            
+            // TỰ ĐỘNG PHÁT REVIEW (Nếu bạn muốn quét xong là nghe luôn)
+            // PlayAudioAlert(foundPoi); 
+        });
+    }
+    else
+    {
+        MainThread.BeginInvokeOnMainThread(async () => {
+            await DisplayAlert("Thông báo", $"Quán '{scannedName}' chưa có trong hệ thống Food Tour.", "OK");
+        });
+    }
+});
+        // -----------------------------------------------------------
+    }
+    catch (Exception ex)
+    {
+        Dispatcher.Dispatch(async () => await DisplayAlert("Lỗi khởi tạo", ex.Message, "OK"));
+    }
+}
 
     protected override async void OnAppearing()
     {
@@ -87,26 +146,44 @@ public partial class MapPage : ContentPage
 
     // --- LOGIC BẢN ĐỒ & RADAR ---
     private void SetupMap()
+{
+    // 1. nếu đã có map rồi thì không tạo mới (để giữ lại các ghim/pin)
+    if (foodMapView.Map == null)
     {
-        if (foodMapView.Map == null)
-        {
-            foodMapView.Map = new Mapsui.Map();
-        }
-        foodMapView.Map.Layers.Clear();
-        
-        // ĐÃ SỬA: Đổi sang link OpenStreetMap để bản đồ có màu
-        var tileSource = new HttpTileSource(
-            new GlobalSphericalMercator(), 
-            "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", 
-            new[] { "a", "b", "c" }, 
-            name: "OpenStreetMap");
-            
-        foodMapView.Map.Layers.Add(new TileLayer(tileSource));
-        var center = SphericalMercator.FromLonLat(106.7000, 10.7600);
-        foodMapView.Map.Home = n => n.CenterOnAndZoomTo(new MPoint(center.x, center.y), 2);
-        foodMapView.MyLocationEnabled = true;
+        foodMapView.Map = new Mapsui.Map();
     }
 
+    // 2. dọn dẹp các lớp bản đồ cũ để nạp lớp mới sạch sẽ
+    foodMapView.Map.Layers.Clear();
+
+    try
+    {
+        // 3. dùng máy chủ bản đồ của CartoDB (rất ổn định cho máy ảo)
+        var tileSource = new BruTile.Web.HttpTileSource(
+            new BruTile.Predefined.GlobalSphericalMercator(),
+            "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png",
+            new[] { "a", "b", "c", "d" },
+            name: "CartoDB",
+            userAgent: "vinh_khanh_food_tour"
+        );
+
+        var tileLayer = new Mapsui.Tiling.Layers.TileLayer(tileSource);
+        foodMapView.Map.Layers.Add(tileLayer);
+
+        // 4. căn chỉnh vị trí phố vĩnh khánh, quận 4
+        var center = Mapsui.Projections.SphericalMercator.FromLonLat(106.7000, 10.7600);
+        foodMapView.Map.Home = n => n.CenterOnAndZoomTo(new MPoint(center.x, center.y), 1.5);
+
+        // 5. gọi lại hàm nạp quán ăn ngay lập tức sau khi có map
+        LoadPinsToMap(); 
+        
+        foodMapView.Refresh();
+    }
+    catch (Exception ex)
+    {
+        System.Diagnostics.Debug.WriteLine($"lỗi nạp map: {ex.Message}");
+    }
+}
     private void StartRadar()
     {
         _radarTimer = Dispatcher.CreateTimer();
@@ -278,23 +355,41 @@ public partial class MapPage : ContentPage
         });
     }
 
-    private void LoadPinsToMap()
-    {
-        if (foodMapView == null) return;
+   private void LoadPinsToMap()
+{
+    // kiểm tra an toàn để tránh app bị văng (crash)
+    if (foodMapView == null || _pois == null) return;
 
+    // dùng dispatcher để đảm bảo việc vẽ ghim diễn ra trên luồng giao diện (ui thread)
+    Dispatcher.Dispatch(() =>
+    {
+        // 1. xóa sạch ghim cũ trước khi nạp mới để tránh bị trùng lặp
         foodMapView.Pins.Clear();
+
+        // 2. bắt đầu nạp từng quán ăn từ danh sách _pois
         foreach (var poi in _pois)
         {
-            foodMapView.Pins.Add(new Mapsui.UI.Maui.Pin(foodMapView) { 
-                Label = poi.Name, 
-                Position = new Mapsui.UI.Maui.Position(poi.Lat, poi.Lng), 
-                Tag = poi, 
-                Color = Microsoft.Maui.Graphics.Colors.Red 
-            });
+            var pin = new Mapsui.UI.Maui.Pin(foodMapView)
+            {
+                Label = poi.Name,
+                // vị trí lat/lng lấy từ database của bạn
+                Position = new Mapsui.UI.Maui.Position(poi.Lat, poi.Lng),
+                Tag = poi,
+                Color = Microsoft.Maui.Graphics.Colors.Red,
+                Scale = 0.8f // làm ghim to rõ hơn một chút cho dễ bấm
+            };
+            
+            foodMapView.Pins.Add(pin);
         }
+
+        // 3. giữ nguyên chức năng click: xóa đăng ký cũ và nạp lại để không bị gọi 2 lần
         foodMapView.PinClicked -= OnMapPinClicked;
         foodMapView.PinClicked += OnMapPinClicked;
-    }
+
+        // 4. lệnh "thần thánh" để ép bản đồ phải vẽ lại toàn bộ ghim lên màn hình
+        foodMapView.Refresh();
+    });
+}
 
     private void CustomMyLocationClicked(object? sender, EventArgs e)
     {

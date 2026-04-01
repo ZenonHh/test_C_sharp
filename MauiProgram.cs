@@ -4,6 +4,7 @@ using DoAnCSharp.Services;
 using DoAnCSharp.Views;
 using DoAnCSharp.ViewModels;
 using SkiaSharp.Views.Maui.Controls.Hosting;
+using ZXing.Net.Maui.Controls; // Thư viện quét mã vạch
 
 namespace DoAnCSharp;
 
@@ -16,6 +17,7 @@ public static class MauiProgram
             .UseMauiApp<App>()
             .UseSkiaSharp()
             .UseMauiCommunityToolkit()
+            .UseBarcodeReader() // ĐÃ THÊM DÒNG NÀY ĐỂ KÍCH HOẠT QUÉT MÃ QR
             .ConfigureFonts(fonts =>
             {
                 fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
@@ -33,7 +35,8 @@ public static class MauiProgram
         builder.Services.AddSingleton<HomeViewModel>();
         builder.Services.AddSingleton<MapViewModel>();
 
-        // 3. ĐĂNG KÝ CÁC TRANG (Đã XÓA SẠCH chữ "Views." và thêm ProfilePage)
+        // 3. ĐĂNG KÝ CÁC TRANG 
+        builder.Services.AddTransient<ScanQRPage>();
         builder.Services.AddTransient<AuthPage>();
         builder.Services.AddSingleton<HomePage>();
         builder.Services.AddSingleton<MapPage>();
@@ -42,7 +45,7 @@ public static class MauiProgram
 
         builder.Services.AddTransient<ProfileViewModel>();
         builder.Services.AddTransient<RegisterViewModel>();
-builder.Services.AddTransient<Views.RegisterPage>();
+        builder.Services.AddTransient<Views.RegisterPage>();
 
 #if DEBUG
         //builder.Logging.AddDebug();

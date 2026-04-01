@@ -1,15 +1,17 @@
 using DoAnCSharp.Services;
+using DoAnCSharp.Views; 
 
 namespace DoAnCSharp;
 
 public partial class AppShell : Shell
 {
-    // ĐÃ SỬA: Thêm tham số ILanguageService
+    
     public AppShell(ILanguageService langService)
     {
         InitializeComponent();
-        
-        // Gán LanguageService làm nguồn dữ liệu cho giao diện
+
+        Routing.RegisterRoute(nameof(ScanQRPage), typeof(ScanQRPage));
+
         BindingContext = langService;
     }
 }

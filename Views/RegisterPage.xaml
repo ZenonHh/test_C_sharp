@@ -8,7 +8,7 @@
              NavigationPage.HasNavigationBar="False">
 
     <ScrollView>
-        <VerticalStackLayout Spacing="20" Padding="30" VerticalOptions="CenterAndExpand">
+        <VerticalStackLayout Spacing="20" Padding="30" VerticalOptions="Center">
             
             <Image Source="dotnet_bot.png" HeightRequest="100" HorizontalOptions="Center" Margin="0,0,0,20"/>
             
