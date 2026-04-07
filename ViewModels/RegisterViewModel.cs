@@ -1,7 +1,12 @@
+#nullable disable
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using DoAnCSharp.Helpers;
 using DoAnCSharp.Services;
+using Microsoft.Maui.Media;
+using Microsoft.Maui.Storage;
 using System;
+using System.IO;
 using System.Threading.Tasks;
 using Microsoft.Maui.Controls;
 
@@ -9,7 +14,7 @@ namespace DoAnCSharp.ViewModels;
 
 public partial class RegisterViewModel : ObservableObject
 {
-    private readonly DatabaseService _dbService;
+    private readonly IAuthService _authService;
     private readonly IServiceProvider _serviceProvider;
 
     [ObservableProperty]
@@ -21,9 +26,20 @@ public partial class RegisterViewModel : ObservableObject
     [ObservableProperty]
     private string _password = string.Empty;
 
-    public RegisterViewModel(DatabaseService dbService, IServiceProvider serviceProvider)
+    [ObservableProperty]
+    private string _confirmPassword = string.Empty;
+
+    [ObservableProperty]
+    private string _error = string.Empty;
+
+    private string _selectedAvatarPath = "dotnet_bot.png";
+
+    [ObservableProperty]
+    private ImageSource _avatarSource = ImageSource.FromFile("dotnet_bot.png");
+
+    public RegisterViewModel(IAuthService authService, IServiceProvider serviceProvider)
     {
-        _dbService = dbService;
+        _authService = authService;
         _serviceProvider = serviceProvider;
     }
 
@@ -32,37 +48,101 @@ public partial class RegisterViewModel : ObservableObject
     {
         if (string.IsNullOrWhiteSpace(FullName) || string.IsNullOrWhiteSpace(Email) || string.IsNullOrWhiteSpace(Password))
         {
-            if (Application.Current?.MainPage != null)
-                await Application.Current.MainPage.DisplayAlert("Lỗi", "Vui lòng nhập đầy đủ thông tin!", "OK");
+            Error = "Vui lòng nhập đầy đủ thông tin";
             return;
         }
 
-        // Gọi hàm Đăng ký ở DB
-        bool isSuccess = await _dbService.RegisterUserAsync(FullName, Email, Password);
+        if (Password != ConfirmPassword)
+        {
+            Error = "Mật khẩu không trùng khớp";
+            return;
+        }
+
+        Error = string.Empty;
+
+        bool isSuccess = await _authService.RegisterAsync(Email, Password, FullName, _selectedAvatarPath);
 
         if (isSuccess)
         {
             if (Application.Current?.MainPage != null)
             {
                 await Application.Current.MainPage.DisplayAlert("Thành công", "Đăng ký thành công! Mời bạn đăng nhập.", "OK");
-                // Đăng ký xong tự động quay về trang Login
+                // Chuyển về trang AuthPage
                 Application.Current.MainPage = _serviceProvider.GetService(typeof(Views.AuthPage)) as Views.AuthPage;
             }
         }
         else
         {
-            if (Application.Current?.MainPage != null)
-                await Application.Current.MainPage.DisplayAlert("Lỗi", "Email này đã được sử dụng!", "OK");
+            Error = "Đăng ký thất bại. Email có thể đã tồn tại.";
         }
     }
 
     [RelayCommand]
     private void GoToLogin()
     {
-        // Quay về trang Đăng nhập nếu bấm nút "Đã có tài khoản"
+        // Xử lý nút quay về trang Đăng nhập
         if (Application.Current != null)
         {
             Application.Current.MainPage = _serviceProvider.GetService(typeof(Views.AuthPage)) as Views.AuthPage;
         }
+    }
+
+    [RelayCommand]
+    private async Task SelectAvatarSource(string sourceType)
+    {
+        try
+        {
+            FileResult photoResult = null;
+
+            if (sourceType == "camera")
+            {
+                if (!await PermissionHelper.RequestCameraPermissionAsync())
+                {
+                    Error = "Chưa cấp quyền Camera.";
+                    return;
+                }
+                photoResult = await MediaPicker.Default.CapturePhotoAsync();
+            }
+            else if (sourceType == "library")
+            {
+                if (!await PermissionHelper.RequestMediaPermissionAsync())
+                {
+                    Error = "Chưa cấp quyền truy cập Thư viện.";
+                    return;
+                }
+                photoResult = await MediaPicker.Default.PickPhotoAsync();
+            }
+
+            if (photoResult != null)
+            {
+                var stream = await photoResult.OpenReadAsync();
+                AvatarSource = ImageSource.FromStream(() => stream);
+                Error = string.Empty;
+
+                await SaveImageLocalAsync(photoResult);
+            }
+        }
+        catch (Exception ex)
+        {
+            Error = $"Lỗi: {ex.Message}";
+        }
+    }
+
+    private async Task SaveImageLocalAsync(FileResult photo)
+    {
+        try
+        {
+            string newFileName = $"avatar_{Guid.NewGuid()}{Path.GetExtension(photo.FileName)}";
+            string destinationPath = Path.Combine(FileSystem.AppDataDirectory, newFileName);
+
+            using (Stream sourceStream = await photo.OpenReadAsync())
+            using (FileStream destStream = File.Create(destinationPath))
+            {
+                await sourceStream.CopyToAsync(destStream);
+            }
+
+            _selectedAvatarPath = destinationPath;
+        }
+        catch { }
     }
 }

@@ -1,3 +1,4 @@
+#nullable disable
 using CommunityToolkit.Mvvm.ComponentModel;
 using System.Collections.ObjectModel;
 using System.Collections.Generic;
@@ -17,6 +18,22 @@ public partial class HomeViewModel : ObservableObject
 
     public ILanguageService Lang { get; }
 
+    // ==========================================
+    // 1. CÁC BIẾN THÔNG TIN NGƯỜI DÙNG (ĐÃ FIX LỖI Ở ĐÂY)
+    // ==========================================
+    [ObservableProperty]
+    private string _userName = "Khách";
+
+    [ObservableProperty]
+    private string _userImage = "dotnet_bot.png";
+
+    [ObservableProperty]
+    private string _welcomeMessage = "";
+
+
+    // ==========================================
+    // 2. CÁC BIẾN QUẢN LÝ DANH SÁCH QUÁN ĂN
+    // ==========================================
     public ObservableCollection<AudioPOI> RecommendedPois { get; set; } = new();
     public ObservableCollection<AudioPOI> AllPois { get; set; } = new();
 
@@ -26,6 +43,16 @@ public partial class HomeViewModel : ObservableObject
     [ObservableProperty]
     private string _searchResultTitle = "Tất cả quán ăn";
 
+
+    // ==========================================
+    // 3. CÁC BIẾN QUẢN LÝ LỊCH SỬ TÌM KIẾM
+    // ==========================================
+    public ObservableCollection<string> SearchHistory { get; set; } = new();
+
+    [ObservableProperty]
+    private bool _isSearchHistoryVisible = false;
+
+
     public HomeViewModel(DatabaseService dbService, ILanguageService languageService)
     {
         _dbService = dbService;
@@ -34,22 +61,36 @@ public partial class HomeViewModel : ObservableObject
 
     public async Task LoadDataAsync()
     {
+        // 1. Lấy thông tin User để hiển thị lên Header
+        var currentUser = await _dbService.GetCurrentUserAsync();
+
+        if (currentUser != null)
+        {
+            UserName = string.IsNullOrWhiteSpace(currentUser.FullName) ? currentUser.Email : currentUser.FullName;
+            UserImage = currentUser.Avatar;
+        }
+        else
+        {
+            UserName = "Khách";
+            UserImage = "dotnet_bot.png";
+        }
+
+        WelcomeMessage = $"Chào {UserName}!";
+
+        // 2. Lấy dữ liệu quán ăn
         var data = await _dbService.GetPOIsAsync();
         if (data != null)
         {
             _originalPois = data;
-            // Gọi hàm tính khoảng cách khi vừa load xong dữ liệu
             await CalculateDistancesAsync();
         }
         FilterList("");
     }
 
-    // HÀM TÍNH TOÁN KHOẢNG CÁCH VÀ THỜI GIAN ĐI BỘ
     private async Task CalculateDistancesAsync()
     {
         try
         {
-            // 1. Lấy vị trí hiện tại của người dùng
             var userLocation = await Geolocation.Default.GetLastKnownLocationAsync();
             if (userLocation == null)
             {
@@ -57,27 +98,19 @@ public partial class HomeViewModel : ObservableObject
                 userLocation = await Geolocation.Default.GetLocationAsync(request);
             }
 
-            // 2. Tính khoảng cách cho từng quán ăn
             if (userLocation != null)
             {
                 foreach (var poi in _originalPois)
                 {
                     double distanceKm = Location.CalculateDistance(userLocation, poi.Lat, poi.Lng, DistanceUnits.Kilometers);
-
-                    // Hiển thị mét nếu < 1km, ngược lại hiển thị km
                     string distStr = distanceKm < 1 ? $"{(int)(distanceKm * 1000)}m" : $"{Math.Round(distanceKm, 1)}km";
-
-                    // Vận tốc đi bộ trung bình ~5km/h (1km tốn 12 phút)
-                    int walkMinutes = (int)(distanceKm * 12);
-                    if (walkMinutes < 1) walkMinutes = 1;
-
+                    int walkMinutes = Math.Max(1, (int)(distanceKm * 12));
                     poi.DistanceInfo = $"📍 {distStr}  •  🚶 {walkMinutes} phút";
                 }
             }
         }
         catch
         {
-            // Nếu người dùng từ chối cấp quyền GPS
             foreach (var poi in _originalPois)
             {
                 poi.DistanceInfo = "📍 Chưa có định vị";
@@ -117,10 +150,6 @@ public partial class HomeViewModel : ObservableObject
             foreach (var item in filtered) AllPois.Add(item);
         }
     }
-    public ObservableCollection<string> SearchHistory { get; set; } = new();
-
-    [ObservableProperty]
-    private bool _isSearchHistoryVisible = false;
 
     public void LoadSearchHistory()
     {

@@ -313,6 +313,7 @@ public partial class MapPage : ContentPage, IQueryAttributable
 
         MainThread.BeginInvokeOnMainThread(() => {
             DetailName.Text = "Đang tải...";
+            DetailDistance.Text = "📍 Đang tính..."; // Sửa text ở đây
             PoiDetailCard.IsVisible = true;
             AudioPlayerUI.IsVisible = false;
         });
@@ -330,15 +331,20 @@ public partial class MapPage : ContentPage, IQueryAttributable
                 string distStr = distanceKm < 1 ? $"{(int)(distanceKm * 1000)}m" : $"{Math.Round(distanceKm, 1)}km";
                 int walkMinutes = Math.Max(1, (int)(distanceKm * 12));
                 currentDistance = $"📍 {distStr}  •  🚶 {walkMinutes} phút";
-                poi.DistanceInfo = currentDistance; 
+                poi.DistanceInfo = currentDistance;
             }
         }
         catch { }
 
         MainThread.BeginInvokeOnMainThread(() => {
             DetailName.Text = tName;
-            // Gộp Distance vào Description, KHÔNG dùng DetailDistance để tránh lỗi CS0103
-            DetailDescription.Text = string.IsNullOrEmpty(currentDistance) ? tDesc : $"{currentDistance}\n\n{tDesc}";
+
+            // ĐÃ SỬA: Tách bạch rõ ràng. Description chỉ hiện mô tả.
+            DetailDescription.Text = tDesc;
+
+            // ĐÃ SỬA: Đưa khoảng cách về đúng thẻ DetailDistance của nó.
+            DetailDistance.Text = string.IsNullOrEmpty(currentDistance) ? "📍 Chưa xác định" : currentDistance;
+
             DetailImage.Source = poi.ImageAsset;
 
             if (PlayReviewButton != null)
