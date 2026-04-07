@@ -52,6 +52,16 @@
                         BackgroundColor="#3F8CFF" TextColor="White" 
                         FontAttributes="Bold" FontSize="18"
                         Command="{Binding LoginCommand}" />
+                <Label Text="Quên mật khẩu?" 
+                       TextColor="White" 
+                       FontAttributes="Bold" 
+                       HorizontalOptions="Center" 
+                       Margin="0, 15, 0, 0"
+                       TextDecorations="Underline">
+                    <Label.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnForgotPasswordTapped" />
+                    </Label.GestureRecognizers>
+                </Label>
 
                 <Button Text="Chưa có tài khoản? Đăng ký ngay" 
                         Command="{Binding GoToRegisterCommand}" 
