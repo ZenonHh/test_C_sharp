@@ -403,6 +403,26 @@ public partial class MapPage : ContentPage, IQueryAttributable
             PlayAudioAlert(_currentPoi);
         }
     }
+    private async void OnGetDirectionsClicked(object sender, EventArgs e)
+    {
+        if (_currentPoi == null) return;
+
+        try
+        {
+            var location = new Location(_currentPoi.Lat, _currentPoi.Lng);
+            var options = new MapLaunchOptions
+            {
+                Name = _currentPoi.Name,
+                NavigationMode = NavigationMode.Driving
+            };
+
+            await Microsoft.Maui.ApplicationModel.Map.Default.OpenAsync(location, options);
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlert("Lỗi", "Không thể mở ứng dụng bản đồ: " + ex.Message, "OK");
+        }
+    }
 
     private void OnSearchTextChanged(object sender, Microsoft.Maui.Controls.TextChangedEventArgs e)
     {
