@@ -31,7 +31,6 @@ public partial class AuthViewModel : ObservableObject
         _dbService = dbService; 
         _serviceProvider = serviceProvider;
     }
-
     [RelayCommand]
     private async Task Login()
     {
@@ -43,13 +42,16 @@ public partial class AuthViewModel : ObservableObject
             return;
         }
 
-        // 2. GỌI HÀM KIỂM TRA ĐĂNG NHẬP (Kiểm tra khớp cả Email lẫn Password trong SQLite)
-        var user = await _dbService.LoginUserAsync(Email, Password);
+        // ĐÃ SỬA: Chuẩn hóa email (xóa khoảng trắng thừa và đưa về chữ thường)
+        string normalizedEmail = Email.Trim().ToLower();
+
+        // 2. GỌI HÀM KIỂM TRA ĐĂNG NHẬP bằng email đã chuẩn hóa
+        var user = await _dbService.LoginUserAsync(normalizedEmail, Password);
 
         if (user != null) // Nếu đúng tài khoản & Mật khẩu
         {
-            // Lưu Email vào bộ nhớ để trang Cá nhân lấy được
-            Microsoft.Maui.Storage.Preferences.Default.Set("CurrentUserEmail", Email);
+            // Lưu Email đã chuẩn hóa vào bộ nhớ để trang Cá nhân lấy được
+            Microsoft.Maui.Storage.Preferences.Default.Set("CurrentUserEmail", normalizedEmail);
 
             // Lưu phiên đăng nhập
             if (_authService != null)
@@ -57,17 +59,15 @@ public partial class AuthViewModel : ObservableObject
                 await _authService.SetLoggedInAsync(true);
             }
 
-            // 3. CHUYỂN GIAO DIỆN: Vào App chính (ĐÃ SỬA LỖI Ở ĐÂY)
+            // 3. CHUYỂN GIAO DIỆN: Vào App chính
             if (Application.Current != null)
             {
-                // Gọi AppShell ra thông qua service provider thay vì new AppShell()
                 var appShell = _serviceProvider.GetService(typeof(AppShell)) as AppShell;
-                
+
                 if (appShell != null)
                 {
                     Application.Current.MainPage = appShell;
-                    // Chờ một chút để Shell render xong giao diện rồi mới điều hướng
-                    await Task.Delay(100); 
+                    await Task.Delay(100);
                     await Shell.Current.GoToAsync("//MapTab");
                 }
             }
@@ -78,7 +78,6 @@ public partial class AuthViewModel : ObservableObject
                 await Application.Current.MainPage.DisplayAlert("Lỗi", "Sai Email hoặc Mật khẩu!\nVui lòng kiểm tra lại.", "OK");
         }
     }
-
     // Hàm để bấm nút "Đăng ký ngay" chuyển sang trang RegisterPage
     [RelayCommand]
     private void GoToRegister()

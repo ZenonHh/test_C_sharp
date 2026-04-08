@@ -68,6 +68,9 @@
         </VerticalStackLayout>
 
         <Border x:Name="PoiDetailCard" IsVisible="False" VerticalOptions="End" HorizontalOptions="Fill" Margin="20, 0, 20, 30" Padding="0" BackgroundColor="White" StrokeThickness="0" ZIndex="4">
+            <Border.GestureRecognizers>
+                <TapGestureRecognizer />
+            </Border.GestureRecognizers>
             <Border.StrokeShape>
                 <RoundRectangle CornerRadius="25" />
             </Border.StrokeShape>

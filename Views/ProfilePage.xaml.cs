@@ -25,7 +25,7 @@ public partial class ProfilePage : ContentPage
     }
     private async void OnEditProfileTapped(object sender, TappedEventArgs e)
     {
-    // Mở trang chỉnh sửa thông tin
-        await Navigation.PushAsync(new EditProfilePage());
+        // Dùng Shell để điều hướng an toàn và tự động nạp ViewModel
+        await Shell.Current.GoToAsync("EditProfilePage");
     }
 }

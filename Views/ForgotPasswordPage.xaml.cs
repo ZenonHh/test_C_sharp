@@ -57,7 +57,13 @@ public partial class ForgotPasswordPage : ContentPage
         }
 
         // Lợi dụng hàm này để check xem email có trong hệ thống không
-        var existingUser = await _dbService.GetOrCreateUserAsync(email);
+        var existingUser = await _dbService.GetUserByEmailAsync(email);
+
+        if (existingUser == null)
+        {
+            await DisplayAlert("Lỗi", "Email này chưa được đăng ký trong hệ thống!", "OK");
+            return; // Lệnh return này sẽ dừng toàn bộ quá trình, không gửi mã OTP nữa
+        }
 
         // Tạo OTP 4 số
         Random rnd = new Random();

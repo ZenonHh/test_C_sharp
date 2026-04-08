@@ -60,23 +60,25 @@ public partial class RegisterViewModel : ObservableObject
 
         Error = string.Empty;
 
-        bool isSuccess = await _authService.RegisterAsync(Email, Password, FullName, _selectedAvatarPath);
+        // ĐÃ SỬA: Viết thường và cắt khoảng trắng thừa để chặn trùng lặp email chính xác
+        string normalizedEmail = Email.Trim().ToLower();
+
+        bool isSuccess = await _authService.RegisterAsync(normalizedEmail, Password, FullName.Trim(), _selectedAvatarPath);
 
         if (isSuccess)
         {
             if (Application.Current?.MainPage != null)
             {
                 await Application.Current.MainPage.DisplayAlert("Thành công", "Đăng ký thành công! Mời bạn đăng nhập.", "OK");
-                // Chuyển về trang AuthPage
                 Application.Current.MainPage = _serviceProvider.GetService(typeof(Views.AuthPage)) as Views.AuthPage;
             }
         }
         else
         {
-            Error = "Đăng ký thất bại. Email có thể đã tồn tại.";
+            Error = "Đăng ký thất bại. Email đã tồn tại trong hệ thống.";
         }
     }
-
+    
     [RelayCommand]
     private void GoToLogin()
     {
@@ -132,7 +134,11 @@ public partial class RegisterViewModel : ObservableObject
     {
         try
         {
-            string newFileName = $"avatar_{Guid.NewGuid()}{Path.GetExtension(photo.FileName)}";
+            // ĐÃ SỬA: Đề phòng trường hợp thư viện ảnh không trả về đuôi file
+            string extension = Path.GetExtension(photo.FileName);
+            if (string.IsNullOrEmpty(extension)) extension = ".jpg";
+
+            string newFileName = $"avatar_{Guid.NewGuid()}{extension}";
             string destinationPath = Path.Combine(FileSystem.AppDataDirectory, newFileName);
 
             using (Stream sourceStream = await photo.OpenReadAsync())
@@ -143,6 +149,10 @@ public partial class RegisterViewModel : ObservableObject
 
             _selectedAvatarPath = destinationPath;
         }
-        catch { }
+        catch (Exception ex)
+        {
+            // ĐÃ SỬA: Hiển thị lỗi ra UI nếu không lưu được thay vì im lặng
+            Error = $"Không thể lưu ảnh: {ex.Message}";
+        }
     }
 }

@@ -1,6 +1,4 @@
-
 #nullable disable
-
 using SQLite;
 using DoAnCSharp.Models;
 using Microsoft.Maui.Storage;
@@ -9,11 +7,14 @@ using System.Threading.Tasks;
 
 namespace DoAnCSharp.Services;
 
+// ĐÂY LÀ PHẦN INTERFACE ĐÃ ĐƯỢC KHAI BÁO REGISTER_ASYNC
 public interface IAuthService
 {
     Task SetLoggedInAsync(bool status);
     Task<bool> IsLoggedInAsync();
     void Logout();
+
+    // Khai báo hàm đăng ký
     Task<bool> RegisterAsync(string email, string password, string fullName, string avatar = "dotnet_bot.png");
 }
 
@@ -27,7 +28,9 @@ public class AuthService : IAuthService
         if (_connection != null)
             return;
 
-        string dbPath = Path.Combine(FileSystem.AppDataDirectory, "FoodTourDB.db3");
+        // Dùng chung một Database để tránh lỗi đăng nhập
+        string dbPath = Path.Combine(FileSystem.AppDataDirectory, "VinhKhanhTour_Full.db3");
+
         _connection = new SQLiteAsyncConnection(dbPath);
         await _connection.CreateTableAsync<User>();
     }
@@ -50,13 +53,17 @@ public class AuthService : IAuthService
         Preferences.Default.Remove("CurrentUserEmail");
     }
 
+    // THỰC THI HÀM ĐĂNG KÝ Ở ĐÂY
     public async Task<bool> RegisterAsync(string email, string password, string fullName, string avatar = "dotnet_bot.png")
     {
         await InitAsync();
 
         var existingUser = await _connection.Table<User>().Where(u => u.Email == email).FirstOrDefaultAsync();
+
         if (existingUser != null)
+        {
             return false;
+        }
 
         var newUser = new User
         {

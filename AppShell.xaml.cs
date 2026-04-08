@@ -14,5 +14,7 @@ public partial class AppShell : Shell
 
         BindingContext = langService;
         Routing.RegisterRoute("HistoryPage", typeof(Views.HistoryPage));
+
+        Routing.RegisterRoute("EditProfilePage", typeof(Views.EditProfilePage));
     }
 }

@@ -114,6 +114,13 @@ public class DatabaseService
         return user;
     }
 
+    // THÊM HÀM NÀY: Chỉ tìm kiếm User, KHÔNG tạo mới nếu không thấy
+    public async Task<User?> GetUserByEmailAsync(string email)
+    {
+        await InitAsync();
+        return await _connection!.Table<User>().Where(u => u.Email == email).FirstOrDefaultAsync();
+    }
+
     // 5. Lấy User đang đăng nhập
     public async Task<User?> GetCurrentUserAsync()
     {
