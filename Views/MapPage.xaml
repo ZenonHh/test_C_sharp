@@ -23,7 +23,7 @@
                     <Border.StrokeShape>
                         <RoundRectangle CornerRadius="15" />
                     </Border.StrokeShape>
-                    <Image Source="dotnet_bot.png" Aspect="AspectFill" />
+                    <Image x:Name="MapUserAvatar" Source="dotnet_bot.png" Aspect="AspectFill" />
                 </Border>
             </Grid>
         </Border>

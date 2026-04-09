@@ -78,8 +78,32 @@ public partial class MapPage : ContentPage, IQueryAttributable
     {
         base.OnAppearing();
         await LoadDataFromDatabaseAsync();
+
+        // THÊM: Tự động cập nhật ảnh đại diện người dùng
+        await UpdateUserAvatarAsync();
     }
 
+    private async Task UpdateUserAvatarAsync()
+    {
+        try
+        {
+            // Lấy thông tin User đang đăng nhập từ Database
+            var currentUser = await _dbService.GetCurrentUserAsync();
+
+            if (currentUser != null && !string.IsNullOrEmpty(currentUser.Avatar))
+            {
+                MainThread.BeginInvokeOnMainThread(() =>
+                {
+                    // Gán đường dẫn ảnh vào control trên giao diện
+                    MapUserAvatar.Source = currentUser.Avatar;
+                });
+            }
+        }
+        catch
+        {
+            // Nếu có lỗi (chưa đăng nhập chẳng hạn), cứ giữ nguyên bot mặc định
+        }
+    }
     private async Task LoadDataFromDatabaseAsync()
     {
         try
@@ -502,5 +526,10 @@ public partial class MapPage : ContentPage, IQueryAttributable
         {
             await DisplayAlert("Lỗi", "Không thể mở camera: " + ex.Message, "OK"); 
         }
+    }
+    protected override void OnDisappearing()
+    {
+        base.OnDisappearing();
+        StopAudio(); // Tự động dọn dẹp âm thanh khi chuyển sang tab khác
     }
 }

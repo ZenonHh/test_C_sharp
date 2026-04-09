@@ -129,10 +129,13 @@ public partial class HomeViewModel : ObservableObject
             IsRecommendedVisible = true;
             SearchResultTitle = Lang.CurrentLocale == "vi" ? "Tất cả quán ăn" : "All restaurants";
 
+            // Lấy 2 quán nổi bật nhất cho phần Đề xuất ở trên cùng
             var topPois = _originalPois.OrderByDescending(p => p.Priority).Take(2).ToList();
             foreach (var item in topPois) RecommendedPois.Add(item);
 
-            var otherPois = _originalPois.Take(3).ToList();
+            // ĐÃ SỬA LỖI Ở ĐÂY: Thay vì chỉ lấy 3 quán (Take(3)), bây giờ lấy TẤT CẢ các quán còn lại
+            // để khi người dùng bấm về "Phổ biến", danh sách sẽ hiện đầy đủ không bị trống
+            var otherPois = _originalPois.Where(p => !topPois.Contains(p)).ToList();
             foreach (var item in otherPois) AllPois.Add(item);
         }
         else
@@ -170,4 +173,6 @@ public partial class HomeViewModel : ObservableObject
         Microsoft.Maui.Storage.Preferences.Default.Set("SearchHistoryLog", string.Join("|", list));
         LoadSearchHistory();
     }
+
+
 }
