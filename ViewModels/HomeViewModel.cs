@@ -8,12 +8,14 @@ using DoAnCSharp.Models;
 using DoAnCSharp.Services;
 using Microsoft.Maui.Devices.Sensors;
 using System;
+using System.Diagnostics;
 
 namespace DoAnCSharp.ViewModels;
 
 public partial class HomeViewModel : ObservableObject
 {
     private readonly DatabaseService _dbService;
+    private readonly ApiService _apiService;  // 🔌 Thêm ApiService
     private List<AudioPOI> _originalPois = new();
 
     public ILanguageService Lang { get; }
@@ -53,15 +55,16 @@ public partial class HomeViewModel : ObservableObject
     private bool _isSearchHistoryVisible = false;
 
 
-    public HomeViewModel(DatabaseService dbService, ILanguageService languageService)
+    public HomeViewModel(DatabaseService dbService, ApiService apiService, ILanguageService languageService)
     {
         _dbService = dbService;
+        _apiService = apiService;  // 🔌 Inject ApiService
         Lang = languageService;
     }
 
     public async Task LoadDataAsync()
     {
-        // 1. Lấy thông tin User để hiển thị lên Header
+        // 1. Lấy thông tin User từ local database
         var currentUser = await _dbService.GetCurrentUserAsync();
 
         if (currentUser != null)
@@ -77,8 +80,21 @@ public partial class HomeViewModel : ObservableObject
 
         WelcomeMessage = $"Chào {UserName}!";
 
-        // 2. Lấy dữ liệu quán ăn
-        var data = await _dbService.GetPOIsAsync();
+        // 2. Lấy dữ liệu quán ăn - Ưu tiên lấy từ Web API, nếu không được thì dùng local DB
+        List<AudioPOI> data = new();
+
+        // 🔌 Thử lấy từ Web Admin API trước
+        if (await _apiService.IsWebAdminAvailableAsync())
+        {
+            Debug.WriteLine("✅ Web Admin API khả dụng - Lấy dữ liệu từ API");
+            data = await _apiService.GetPOIsAsync();
+        }
+        else
+        {
+            Debug.WriteLine("⚠️  Web Admin API không khả dụng - Lấy từ local database");
+            data = await _dbService.GetPOIsAsync();
+        }
+
         if (data != null)
         {
             _originalPois = data;

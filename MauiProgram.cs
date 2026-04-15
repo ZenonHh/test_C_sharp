@@ -30,6 +30,7 @@ public static class MauiProgram
         builder.Services.AddSingleton<DatabaseService>();
         builder.Services.AddSingleton<LocationService>(); 
         builder.Services.AddSingleton<IAuthService, AuthService>();
+        builder.Services.AddSingleton<ApiService>();  // 🔌 Thêm ApiService để gọi Web Admin
 
         // 2. ĐĂNG KÝ VIEWMODELS
         builder.Services.AddTransient<AuthViewModel>();

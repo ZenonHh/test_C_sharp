@@ -1,10 +1,12 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using DoAnCSharp.Services;
+using DoAnCSharp.Models;
 using DoAnCSharp;
 using System; 
 using System.Threading.Tasks;
 using Microsoft.Maui.Controls;
+using System.Diagnostics;
 
 namespace DoAnCSharp.ViewModels;
 
@@ -12,6 +14,7 @@ public partial class AuthViewModel : ObservableObject
 {
     private readonly IAuthService _authService;
     private readonly DatabaseService _dbService;
+    private readonly ApiService _apiService;  // 🔌 Thêm ApiService
     private readonly IServiceProvider _serviceProvider; // Khai báo công cụ chuyển trang
 
     [ObservableProperty]
@@ -24,11 +27,12 @@ public partial class AuthViewModel : ObservableObject
     private string _password = string.Empty;
 #pragma warning restore MVVMTK0045
 
-    // Phải nhận cả 3 công cụ vào Constructor
-    public AuthViewModel(IAuthService authService, DatabaseService dbService, IServiceProvider serviceProvider)
+    // Phải nhận cả 4 công cụ vào Constructor
+    public AuthViewModel(IAuthService authService, DatabaseService dbService, ApiService apiService, IServiceProvider serviceProvider)
     {
         _authService = authService;
-        _dbService = dbService; 
+        _dbService = dbService;
+        _apiService = apiService;  // 🔌 Inject ApiService
         _serviceProvider = serviceProvider;
     }
     [RelayCommand]
@@ -42,24 +46,32 @@ public partial class AuthViewModel : ObservableObject
             return;
         }
 
-        // ĐÃ SỬA: Chuẩn hóa email (xóa khoảng trắng thừa và đưa về chữ thường)
+        // Chuẩn hóa email
         string normalizedEmail = Email.Trim().ToLower();
 
-        // 2. GỌI HÀM KIỂM TRA ĐĂNG NHẬP bằng email đã chuẩn hóa
-        var user = await _dbService.LoginUserAsync(normalizedEmail, Password);
+        // 🔌 Ưu tiên lấy từ Web API, nếu không được thì dùng local DB
+        User? user = null;
 
-        if (user != null) // Nếu đúng tài khoản & Mật khẩu
+        if (await _apiService.IsWebAdminAvailableAsync())
         {
-            // Lưu Email đã chuẩn hóa vào bộ nhớ để trang Cá nhân lấy được
+            Debug.WriteLine("✅ Đăng nhập qua Web API");
+            user = await _apiService.LoginUserAsync(normalizedEmail, Password);
+        }
+        else
+        {
+            Debug.WriteLine("⚠️  Đăng nhập qua local database");
+            user = await _dbService.LoginUserAsync(normalizedEmail, Password);
+        }
+
+        if (user != null)
+        {
             Microsoft.Maui.Storage.Preferences.Default.Set("CurrentUserEmail", normalizedEmail);
 
-            // Lưu phiên đăng nhập
             if (_authService != null)
             {
                 await _authService.SetLoggedInAsync(true);
             }
 
-            // 3. CHUYỂN GIAO DIỆN: Vào App chính
             if (Application.Current != null)
             {
                 var appShell = _serviceProvider.GetService(typeof(AppShell)) as AppShell;
@@ -72,7 +84,7 @@ public partial class AuthViewModel : ObservableObject
                 }
             }
         }
-        else // Nếu sai Email hoặc Mật khẩu
+        else
         {
             if (Application.Current?.MainPage != null)
                 await Application.Current.MainPage.DisplayAlert("Lỗi", "Sai Email hoặc Mật khẩu!\nVui lòng kiểm tra lại.", "OK");
