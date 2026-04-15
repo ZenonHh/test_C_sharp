@@ -26,6 +26,7 @@
 
                 <VerticalStackLayout>
 
+                    <!-- 🎧 Lịch sử đã nghe -->
                     <Grid ColumnDefinitions="Auto, *, Auto" Padding="20">
                         <Grid.GestureRecognizers>
                             <TapGestureRecognizer Tapped="OnHistoryTapped" />
@@ -37,6 +38,19 @@
 
                     <BoxView HeightRequest="1" Color="#F4F6F8" Margin="20,0"/>
 
+                    <!-- 💳 Thanh toán -->
+                    <Grid ColumnDefinitions="Auto, *, Auto" Padding="20">
+                        <Grid.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnPaymentTapped" />
+                        </Grid.GestureRecognizers>
+                        <Label Text="💳" FontSize="22" VerticalOptions="Center"/>
+                        <Label Grid.Column="1" Text="Thanh toán" FontSize="16" VerticalOptions="Center" Margin="15,0,0,0" TextColor="#34495E"/>
+                        <Label Grid.Column="2" Text="❯" FontSize="16" TextColor="#BDC3C7" VerticalOptions="Center"/>
+                    </Grid>
+
+                    <BoxView HeightRequest="1" Color="#F4F6F8" Margin="20,0"/>
+
+                    <!-- 🌐 Chọn ngôn ngữ -->
                     <Grid ColumnDefinitions="Auto, *, Auto" Padding="20">
                         <Grid.GestureRecognizers>
                             <TapGestureRecognizer Command="{Binding ChangeLanguageCommand}" />
@@ -48,9 +62,10 @@
 
                     <BoxView HeightRequest="1" Color="#F4F6F8" Margin="20,0"/>
 
+                    <!-- 👤 Chỉnh sửa thông tin -->
                     <Grid ColumnDefinitions="Auto, *, Auto" Padding="20">
                         <Grid.GestureRecognizers>
-                            <TapGestureRecognizer Tapped="OnEditProfileTapped" />
+                            <TapGestureRecognizer Command="{Binding EditProfileCommand}" />
                         </Grid.GestureRecognizers>
                         <Label Text="👤" FontSize="22" VerticalOptions="Center"/>
                         <Label Grid.Column="1" Text="Chỉnh sửa thông tin" FontSize="16" VerticalOptions="Center" Margin="15,0,0,0" TextColor="#34495E"/>

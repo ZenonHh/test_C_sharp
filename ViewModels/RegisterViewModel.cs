@@ -9,6 +9,7 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using Microsoft.Maui.Controls;
+using System.Diagnostics;
 
 namespace DoAnCSharp.ViewModels;
 
@@ -16,6 +17,8 @@ public partial class RegisterViewModel : ObservableObject
 {
     private readonly IAuthService _authService;
     private readonly IServiceProvider _serviceProvider;
+    private readonly ApiService _apiService;
+    private readonly DatabaseService _dbService;
 
     [ObservableProperty]
     private string _fullName = string.Empty;
@@ -37,10 +40,12 @@ public partial class RegisterViewModel : ObservableObject
     [ObservableProperty]
     private ImageSource _avatarSource = ImageSource.FromFile("dotnet_bot.png");
 
-    public RegisterViewModel(IAuthService authService, IServiceProvider serviceProvider)
+    public RegisterViewModel(IAuthService authService, IServiceProvider serviceProvider, ApiService apiService, DatabaseService dbService)
     {
         _authService = authService;
         _serviceProvider = serviceProvider;
+        _apiService = apiService;
+        _dbService = dbService;
     }
 
     [RelayCommand]
@@ -63,7 +68,19 @@ public partial class RegisterViewModel : ObservableObject
         // ĐÃ SỬA: Viết thường và cắt khoảng trắng thừa để chặn trùng lặp email chính xác
         string normalizedEmail = Email.Trim().ToLower();
 
-        bool isSuccess = await _authService.RegisterAsync(normalizedEmail, Password, FullName.Trim(), _selectedAvatarPath);
+        // 🔌 Ưu tiên đăng ký qua Web API, nếu không được thì dùng local DB
+        bool isSuccess = false;
+
+        if (await _apiService.IsWebAdminAvailableAsync())
+        {
+            Debug.WriteLine("✅ Đăng ký qua Web API");
+            isSuccess = await _apiService.RegisterUserAsync(FullName.Trim(), normalizedEmail, Password);
+        }
+        else
+        {
+            Debug.WriteLine("⚠️  Đăng ký qua local database");
+            isSuccess = await _authService.RegisterAsync(normalizedEmail, Password, FullName.Trim(), _selectedAvatarPath);
+        }
 
         if (isSuccess)
         {

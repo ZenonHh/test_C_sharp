@@ -2,13 +2,15 @@ using DoAnCSharp.Models;
 using System.Diagnostics;
 using System.Text.Json;
 using System.Net.Http.Json;
+using Microsoft.Maui.Storage;
 
 namespace DoAnCSharp.Services;
 
 public class ApiService
 {
     private readonly HttpClient _httpClient;
-    private string _baseUrl = "http://localhost:5000/api";
+    // ĐÃ SỬA: Dùng 10.0.2.2 thay vì localhost cho máy ảo Android
+    private string _baseUrl = "http://10.0.2.2:5000/api";
     private readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
 
     public ApiService(string? baseUrl = null)
@@ -229,7 +231,7 @@ public class ApiService
     }
 
     // ==================== KIỂM TRA KẾT NỐI ====================
-    
+
     public async Task<bool> IsWebAdminAvailableAsync()
     {
         try
@@ -239,6 +241,42 @@ public class ApiService
         }
         catch
         {
+            return false;
+        }
+    }
+
+    // ==================== THANH TOÁN ====================
+
+    public async Task<bool> ProcessPaymentAsync(int userId)
+    {
+        try
+        {
+            var user = await GetUserByEmailAsync(Preferences.Default.Get("CurrentUserEmail", ""));
+            if (user != null)
+            {
+                user.IsPaid = true;
+                user.PaidDate = DateTime.Now;
+                return await UpdateUserAsync(user.Id, user);
+            }
+            return false;
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"❌ ProcessPayment Error: {ex.Message}");
+            return false;
+        }
+    }
+
+    public async Task<bool> IsUserPaidAsync(string email)
+    {
+        try
+        {
+            var user = await GetUserByEmailAsync(email);
+            return user?.IsPaid ?? false;
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"❌ IsUserPaid Error: {ex.Message}");
             return false;
         }
     }

@@ -20,10 +20,6 @@
             <ShellContent ContentTemplate="{DataTemplate views:MapPage}" />
         </Tab>
 
-        <Tab Title="💳 Thanh Toán">
-            <ShellContent ContentTemplate="{DataTemplate views:PaymentPage}" />
-        </Tab>
-
         <Tab Title="{Binding [profile]}">
             <ShellContent ContentTemplate="{DataTemplate views:ProfilePage}" />
         </Tab>
