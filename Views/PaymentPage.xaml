@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="DoAnCSharp.Views.PaymentPage"
+             Title="💳 Thanh Toán"
+             BackgroundColor="#f5f5f5">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="20" Spacing="15">
+            
+            <!-- Payment Status Card -->
+            <Frame BorderColor="#667eea" CornerRadius="10" Padding="20" HasShadow="True">
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="Trạng Thái Thanh Toán" FontSize="18" FontAttributes="Bold" TextColor="#333"/>
+                    
+                    <HorizontalStackLayout Spacing="10" HorizontalOptions="Center">
+                        <Label x:Name="PaymentStatusLabel" FontSize="14" TextColor="#666" WidthRequest="200"/>
+                    </HorizontalStackLayout>
+
+                    <VerticalStackLayout x:Name="PaidStatusContainer" IsVisible="False" Spacing="5">
+                        <Label Text="✅ Tài khoản đã thanh toán" TextColor="#27ae60" FontSize="14" FontAttributes="Bold"/>
+                        <Label Text="Bạn có quyền quét QR không giới hạn" TextColor="#27ae60" FontSize="12"/>
+                    </VerticalStackLayout>
+
+                    <VerticalStackLayout x:Name="FreeStatusContainer" IsVisible="False" Spacing="5">
+                        <Label Text="🆓 Tài khoản miễn phí" TextColor="#e74c3c" FontSize="14" FontAttributes="Bold"/>
+                        <Label x:Name="ScanLimitLabel" Text="Còn 5 lần quét/ngày" TextColor="#e74c3c" FontSize="12"/>
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Benefits Section -->
+            <Frame BorderColor="#f39c12" CornerRadius="10" Padding="20" HasShadow="True">
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="🌟 Lợi Ích Thanh Toán" FontSize="18" FontAttributes="Bold" TextColor="#333"/>
+                    
+                    <HorizontalStackLayout Spacing="10">
+                        <Label Text="✓" TextColor="#27ae60" FontSize="16" FontAttributes="Bold" WidthRequest="30"/>
+                        <Label Text="Quét QR không giới hạn" TextColor="#333" FontSize="13"/>
+                    </HorizontalStackLayout>
+
+                    <HorizontalStackLayout Spacing="10">
+                        <Label Text="✓" TextColor="#27ae60" FontSize="16" FontAttributes="Bold" WidthRequest="30"/>
+                        <Label Text="Truy cập tất cả quán ăn" TextColor="#333" FontSize="13"/>
+                    </HorizontalStackLayout>
+
+                    <HorizontalStackLayout Spacing="10">
+                        <Label Text="✓" TextColor="#27ae60" FontSize="16" FontAttributes="Bold" WidthRequest="30"/>
+                        <Label Text="Nghe toàn bộ audio tour" TextColor="#333" FontSize="13"/>
+                    </HorizontalStackLayout>
+
+                    <HorizontalStackLayout Spacing="10">
+                        <Label Text="✓" TextColor="#27ae60" FontSize="16" FontAttributes="Bold" WidthRequest="30"/>
+                        <Label Text="Hỗ trợ ưu tiên 24/7" TextColor="#333" FontSize="13"/>
+                    </HorizontalStackLayout>
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- QR Scan Limits (Free users only) -->
+            <Frame x:Name="QRLimitFrame" BorderColor="#e67e22" CornerRadius="10" Padding="20" HasShadow="True" IsVisible="False">
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="📱 Lần Quét QR Hôm Nay" FontSize="16" FontAttributes="Bold" TextColor="#333"/>
+                    
+                    <ProgressBar x:Name="ScanProgressBar" Progress="0.8" ProgressColor="#3498db" HorizontalOptions="Fill"/>
+                    
+                    <Label x:Name="ScanProgressLabel" Text="4 / 5 lần" TextColor="#e67e22" FontSize="12" HorizontalTextAlignment="Center"/>
+                    
+                    <Label Text="⚠️ Bạn sắp hết lần quét hôm nay. Nâng cấp ngay để quét không giới hạn!" 
+                           TextColor="#e74c3c" FontSize="12" LineBreakMode="WordWrap"/>
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Pricing Table -->
+            <Frame BorderColor="#95a5a6" CornerRadius="10" Padding="20" HasShadow="True">
+                <VerticalStackLayout Spacing="15">
+                    <Label Text="💰 Bảng Giá" FontSize="18" FontAttributes="Bold" TextColor="#333"/>
+                    
+                    <!-- Free Plan -->
+                    <Frame BorderColor="#bdc3c7" CornerRadius="8" Padding="15" BackgroundColor="#ecf0f1">
+                        <VerticalStackLayout Spacing="8">
+                            <Label Text="🆓 Miễn Phí" FontSize="14" FontAttributes="Bold" TextColor="#34495e"/>
+                            <Label Text="• 5 lần quét/ngày" TextColor="#7f8c8d" FontSize="12"/>
+                            <Label Text="• Truy cập cơ bản" TextColor="#7f8c8d" FontSize="12"/>
+                            <Label Text="Không cần thanh toán" TextColor="#27ae60" FontSize="11" FontAttributes="Bold"/>
+                        </VerticalStackLayout>
+                    </Frame>
+
+                    <!-- Premium Plan -->
+                    <Frame BorderColor="#f39c12" CornerRadius="8" Padding="15" BackgroundColor="#fff9e6">
+                        <VerticalStackLayout Spacing="8">
+                            <HorizontalStackLayout Spacing="10">
+                                <Label Text="👑 Premium" FontSize="14" FontAttributes="Bold" TextColor="#d68910"/>
+                                <Label Text="ĐƯỢC KHUYÊN" TextColor="#e74c3c" FontSize="10" FontAttributes="Bold"/>
+                            </HorizontalStackLayout>
+                            <Label Text="• Quét QR vô hạn" TextColor="#c0392b" FontSize="12" FontAttributes="Bold"/>
+                            <Label Text="• Toàn bộ nội dung" TextColor="#7f8c8d" FontSize="12"/>
+                            <Label Text="• Ưu tiên hỗ trợ" TextColor="#7f8c8d" FontSize="12"/>
+                            <Label Text="49,000₫/tháng" TextColor="#27ae60" FontSize="13" FontAttributes="Bold"/>
+                        </VerticalStackLayout>
+                    </Frame>
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Payment Button -->
+            <Button x:Name="PaymentButton" 
+                    Text="🎯 Nâng Cấp Thành Premium"
+                    BackgroundColor="#27ae60"
+                    TextColor="White"
+                    FontSize="14"
+                    FontAttributes="Bold"
+                    Padding="20"
+                    CornerRadius="10"
+                    Clicked="OnPaymentButtonClicked"/>
+
+            <!-- Contact Support -->
+            <Frame BorderColor="#95a5a6" CornerRadius="10" Padding="15" HasShadow="False">
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="📞 Hỗ Trợ" FontSize="14" FontAttributes="Bold" TextColor="#333"/>
+                    <Label Text="Liên hệ: 0909 123 456" TextColor="#666" FontSize="12"/>
+                    <Label Text="Email: support@vinhkhanhtour.com" TextColor="#666" FontSize="12"/>
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Spacer -->
+            <BoxView HeightRequest="20"/>
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

@@ -20,7 +20,7 @@
         <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">21.0</SupportedOSPlatformVersion>
 
         <!-- Exclude Web Admin from build -->
-        <DefaultItemExcludes>$(DefaultItemExcludes);DoAnCSharp.AdminWeb**</DefaultItemExcludes>
+        <DefaultItemExcludes>$(DefaultItemExcludes);DoAnCSharp.AdminWeb\**</DefaultItemExcludes>
     </PropertyGroup>
 
     <ItemGroup>
@@ -29,6 +29,11 @@
         <MauiImage Include="Resources\Images\*" />
         <MauiFont Include="Resources\Fonts\*" />
         <MauiAsset Include="Resources\Raw\**" LogicalName="%(RecursiveDir)%(Filename)%(Extension)" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Include="DoAnCSharp.AdminWeb\DoAnCSharp.AdminWeb\DoAnCSharp.AdminWeb.csproj" />
+      <None Include="DoAnCSharp.sln" />
     </ItemGroup>
 
     <ItemGroup>
@@ -45,6 +50,9 @@
 
 	<ItemGroup>
 	  <MauiXaml Update="Views\HistoryPage.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
+	  <MauiXaml Update="Views\PaymentPage.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
 	</ItemGroup>

@@ -31,6 +31,7 @@ public static class MauiProgram
         builder.Services.AddSingleton<LocationService>(); 
         builder.Services.AddSingleton<IAuthService, AuthService>();
         builder.Services.AddSingleton<ApiService>();  // 🔌 Thêm ApiService để gọi Web Admin
+        builder.Services.AddSingleton<IPaymentService, PaymentService>();  // 💳 Thanh toán
 
         // 2. ĐĂNG KÝ VIEWMODELS
         builder.Services.AddTransient<AuthViewModel>();
@@ -42,6 +43,7 @@ public static class MauiProgram
         // 3. ĐĂNG KÝ CÁC TRANG 
         builder.Services.AddTransient<ScanQRPage>();
         builder.Services.AddTransient<AuthPage>();
+        builder.Services.AddTransient<PaymentPage>();  // 💳 Thanh toán
         builder.Services.AddSingleton<HomePage>();
         builder.Services.AddSingleton<MapPage>();
         builder.Services.AddTransient<ProfilePage>(); 
