@@ -71,4 +71,19 @@ public class PaymentsController : ControllerBase
             return BadRequest(new { error = ex.Message });
         }
     }
+
+    // Get all payments for admin dashboard
+    [HttpGet]
+    public async Task<ActionResult<List<UserPayment>>> GetAllPayments()
+    {
+        try
+        {
+            var payments = await _db.GetAllPaymentsAsync();
+            return Ok(payments);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
 }

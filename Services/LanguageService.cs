@@ -167,12 +167,16 @@ public class LanguageService : ILanguageService
         if (_currentLocale != langCode)
         {
             _currentLocale = langCode;
-            
+
             // Lưu lại lựa chọn vào bộ nhớ máy
             Preferences.Default.Set("selected_language", langCode);
-            
+
+            // 🔄 Trigger PropertyChanged nhiều lần để toàn app cập nhật UI
             OnPropertyChanged(nameof(CurrentLocale));
-            OnPropertyChanged("Item"); 
+            OnPropertyChanged("Item");
+
+            // 🔄 Gửi tín hiệu reload tất cả binding
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(null));
         }
     }
 

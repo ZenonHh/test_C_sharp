@@ -11,7 +11,7 @@ public class UserPayment
 
     public bool IsPaid { get; set; } = false;
 
-    public DateTime PaidDate { get; set; } = DateTime.Now;
+    public DateTime? PaidDate { get; set; } = null;
 
     public string PaymentMethod { get; set; } = "Credit Card";
 

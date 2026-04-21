@@ -98,4 +98,52 @@ public class UsersController : ControllerBase
             return BadRequest(new { error = ex.Message });
         }
     }
+
+    // Dashboard endpoints
+    [HttpGet("dashboard/summary")]
+    public async Task<ActionResult<OnlineUserSummary>> GetDashboardSummary()
+    {
+        try
+        {
+            var summary = await _db.GetDashboardSummaryAsync();
+            return Ok(summary);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    [HttpGet("dashboard/online-users")]
+    public async Task<ActionResult<List<UserDevice>>> GetOnlineUsers()
+    {
+        try
+        {
+            var onlineUsers = await _db.GetOnlineUsersAsync();
+            return Ok(onlineUsers);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    [HttpGet("dashboard/qr-activity")]
+    public async Task<ActionResult> GetQRActivity()
+    {
+        try
+        {
+            var activity = await _db.GetQRActivityTodayAsync();
+            return Ok(new 
+            { 
+                totalScans = activity.Item1,
+                uniqueUsers = activity.Item2,
+                topPOIs = activity.Item3
+            });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
 }

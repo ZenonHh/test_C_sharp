@@ -2,28 +2,37 @@ using DoAnCSharp.Models;
 using System.Diagnostics;
 using System.Text.Json;
 using System.Net.Http.Json;
-using Microsoft.Maui.Storage;
 
 namespace DoAnCSharp.Services;
 
 public class ApiService
 {
     private readonly HttpClient _httpClient;
-    // ĐÃ SỬA: Dùng 10.0.2.2 thay vì localhost cho máy ảo Android
-    private string _baseUrl = "http://10.0.2.2:5000/api";
+    private string _baseUrl;
     private readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
 
     public ApiService(string? baseUrl = null)
     {
         _httpClient = new HttpClient();
+
+        // Use ApiConfiguration for smart URL selection
         if (!string.IsNullOrEmpty(baseUrl))
+        {
             _baseUrl = baseUrl;
+        }
+        else
+        {
+            _baseUrl = ApiConfiguration.GetBaseUrl();
+            Debug.WriteLine($"🌐 ApiService initialized with: {_baseUrl}");
+        }
     }
 
     public void SetBaseUrl(string baseUrl) => _baseUrl = baseUrl;
 
+    public string GetCurrentBaseUrl() => _baseUrl;
+
     // ==================== QUÁN ĂN (POI) ====================
-    
+
     public async Task<List<AudioPOI>> GetPOIsAsync()
     {
         try
@@ -198,6 +207,22 @@ public class ApiService
         }
     }
 
+    // 💳 HÀM CẬP NHẬT TRẠNG THÁI THANH TOÁN
+    public async Task<bool> UpdatePaymentStatusAsync(int id, bool isPaid)
+    {
+        try
+        {
+            var updateData = new { IsPaid = isPaid, PaidAt = isPaid ? DateTime.Now : (DateTime?)null };
+            var response = await _httpClient.PutAsJsonAsync($"{_baseUrl}/users/{id}/payment", updateData);
+            return response.IsSuccessStatusCode;
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"❌ UpdatePaymentStatus Error: {ex.Message}");
+            return false;
+        }
+    }
+
     // ==================== LỊCH SỬ PHÁT ====================
     
     public async Task<List<PlayHistory>> GetPlayHistoriesAsync()
@@ -245,38 +270,101 @@ public class ApiService
         }
     }
 
-    // ==================== THANH TOÁN ====================
+    // ==================== MÃ QR ====================
 
-    public async Task<bool> ProcessPaymentAsync(int userId)
+    public async Task<bool> VerifyQRCodeAsync(string sessionToken)
     {
         try
         {
-            var user = await GetUserByEmailAsync(Preferences.Default.Get("CurrentUserEmail", ""));
-            if (user != null)
-            {
-                user.IsPaid = true;
-                user.PaidDate = DateTime.Now;
-                return await UpdateUserAsync(user.Id, user);
-            }
-            return false;
+            var request = new { sessionToken };
+            var response = await _httpClient.PostAsJsonAsync($"{_baseUrl}/qrcodes/verify", request);
+            return response.IsSuccessStatusCode;
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"❌ ProcessPayment Error: {ex.Message}");
+            Debug.WriteLine($"❌ VerifyQRCode Error: {ex.Message}");
             return false;
         }
     }
 
-    public async Task<bool> IsUserPaidAsync(string email)
+    public async Task<bool> ScanQRCodeAsync(int userId, string userName, string userEmail, string sessionToken, string? deviceInfo = null, string? ipAddress = null)
     {
         try
         {
-            var user = await GetUserByEmailAsync(email);
-            return user?.IsPaid ?? false;
+            var scanRequest = new
+            {
+                UserId = userId,
+                UserName = userName,
+                UserEmail = userEmail,
+                QRSessionToken = sessionToken,
+                DeviceInfo = deviceInfo,
+                IpAddress = ipAddress
+            };
+
+            var response = await _httpClient.PostAsJsonAsync($"{_baseUrl}/qrcodes/scan", scanRequest);
+            return response.IsSuccessStatusCode;
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"❌ IsUserPaid Error: {ex.Message}");
+            Debug.WriteLine($"❌ ScanQRCode Error: {ex.Message}");
+            return false;
+        }
+    }
+
+    public async Task<dynamic?> GetQRStatisticsAsync(int restaurantId)
+    {
+        try
+        {
+            var response = await _httpClient.GetAsync($"{_baseUrl}/qrcodes/{restaurantId}/statistics");
+            response.EnsureSuccessStatusCode();
+            var json = await response.Content.ReadAsStringAsync();
+            return JsonSerializer.Deserialize<dynamic>(json, _jsonOptions);
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"❌ GetQRStatistics Error: {ex.Message}");
+            return null;
+        }
+    }
+
+    // ==================== QUẢN LÝ THIẾT BỊ ====================
+
+    public async Task<bool> RegisterDeviceAsync(int userId, string deviceId, string deviceName, string deviceModel, string deviceOS, string appVersion)
+    {
+        try
+        {
+            var device = new
+            {
+                UserId = userId,
+                DeviceId = deviceId,
+                DeviceName = deviceName,
+                DeviceModel = deviceModel,
+                DeviceOS = deviceOS,
+                AppVersion = appVersion,
+                IsOnline = true
+            };
+
+            var response = await _httpClient.PostAsJsonAsync($"{_baseUrl}/devices", device);
+            return response.IsSuccessStatusCode;
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"❌ RegisterDevice Error: {ex.Message}");
+            return false;
+        }
+    }
+
+    public async Task<bool> UpdateDeviceStatusAsync(int deviceId, bool isOnline, string? ipAddress = null)
+    {
+        try
+        {
+            var update = new { IsOnline = isOnline, IpAddress = ipAddress };
+            var response = await _httpClient.PutAsJsonAsync($"{_baseUrl}/devices/{deviceId}/status", update);
+            return response.IsSuccessStatusCode;
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"❌ UpdateDeviceStatus Error: {ex.Message}");
             return false;
         }
     }

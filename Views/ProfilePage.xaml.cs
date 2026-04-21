@@ -17,6 +17,7 @@ public partial class ProfilePage : ContentPage
     protected override async void OnAppearing()
     {
         base.OnAppearing();
+        _viewModel.CheckLoginStatus();
         await _viewModel.LoadUserProfileAsync();
     }
 

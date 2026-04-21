@@ -18,9 +18,8 @@ public class User
     public string Avatar { get; set; } = "dotnet_bot.png"; 
     public string Phone { get; set; } = string.Empty;
 
-    // 🔌 Thêm trường ngôn ngữ để đồng bộ giữa app và web admin
     public string Language { get; set; } = "vi";
 
-    // 💳 Thêm trường thanh toán - true = đã thanh toán, false = miễn phí
     public bool IsPaid { get; set; } = false;
+    public DateTime? PaidAt { get; set; }
 }

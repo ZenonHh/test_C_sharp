@@ -21,6 +21,9 @@ public partial class ProfileViewModel : ObservableObject
     [ObservableProperty]
     private User? _currentUser;
 
+    [ObservableProperty]
+    private bool _isLoggedIn = false;
+
     // Tiêm các Service vào
     public ProfileViewModel(DatabaseService dbService, ApiService apiService, IServiceProvider serviceProvider, ILanguageService langService)
     {
@@ -28,6 +31,13 @@ public partial class ProfileViewModel : ObservableObject
         _apiService = apiService;
         _serviceProvider = serviceProvider;
         Lang = langService; // Gán giá trị để XAML có thể dùng
+        CheckLoginStatus();
+    }
+
+    public void CheckLoginStatus()
+    {
+        string? email = Microsoft.Maui.Storage.Preferences.Default.Get("CurrentUserEmail", "");
+        IsLoggedIn = !string.IsNullOrEmpty(email);
     }
 
     public async Task LoadUserProfileAsync()
@@ -52,13 +62,154 @@ public partial class ProfileViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void Logout()
+    private async Task Login(object? parameter)
     {
-        if (Application.Current != null)
+        try
         {
-            var authPage = _serviceProvider.GetService(typeof(Views.AuthPage)) as Views.AuthPage;
-            Application.Current.MainPage = authPage;
+            // Lấy email và mật khẩu từ Entry controls
+            var emailEntry = (parameter as VerticalStackLayout)?.FindByName<Entry>("EmailEntry");
+            var passwordEntry = (parameter as VerticalStackLayout)?.FindByName<Entry>("PasswordEntry");
+
+            if (emailEntry == null || passwordEntry == null)
+            {
+                await Application.Current?.MainPage?.DisplayAlert("Lỗi", "Không thể tìm thấy trường nhập liệu", "OK");
+                return;
+            }
+
+            string email = emailEntry.Text;
+            string password = passwordEntry.Text;
+
+            if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
+            {
+                await Application.Current?.MainPage?.DisplayAlert("Lỗi", "Vui lòng nhập email và mật khẩu", "OK");
+                return;
+            }
+
+            // 🔌 Ưu tiên Web API, nếu không được thì dùng local DB
+            User? user = null;
+            if (await _apiService.IsWebAdminAvailableAsync())
+            {
+                Debug.WriteLine("✅ Đăng nhập từ Web API");
+                user = await _apiService.LoginUserAsync(email, password);
+            }
+
+            if (user == null)
+            {
+                Debug.WriteLine("⚠️  Đăng nhập từ local database");
+                user = await _dbService.LoginUserAsync(email, password);
+            }
+
+            if (user != null)
+            {
+                // Lưu email vào Preferences
+                Microsoft.Maui.Storage.Preferences.Default.Set("CurrentUserEmail", user.Email);
+                CurrentUser = user;
+                IsLoggedIn = true;
+                emailEntry.Text = "";
+                passwordEntry.Text = "";
+                await Application.Current?.MainPage?.DisplayAlert("Thành công", "Đăng nhập thành công!", "OK");
+            }
+            else
+            {
+                await Application.Current?.MainPage?.DisplayAlert("Lỗi", "Email hoặc mật khẩu không chính xác", "OK");
+            }
         }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"❌ Lỗi đăng nhập: {ex.Message}");
+            await Application.Current?.MainPage?.DisplayAlert("Lỗi", $"Lỗi đăng nhập: {ex.Message}", "OK");
+        }
+    }
+
+    [RelayCommand]
+    private async Task Register(object? parameter)
+    {
+        try
+        {
+            // Lấy email và mật khẩu từ Entry controls
+            var emailEntry = (parameter as VerticalStackLayout)?.FindByName<Entry>("EmailEntry");
+            var passwordEntry = (parameter as VerticalStackLayout)?.FindByName<Entry>("PasswordEntry");
+
+            if (emailEntry == null || passwordEntry == null)
+            {
+                await Application.Current?.MainPage?.DisplayAlert("Lỗi", "Không thể tìm thấy trường nhập liệu", "OK");
+                return;
+            }
+
+            string email = emailEntry.Text;
+            string password = passwordEntry.Text;
+
+            if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
+            {
+                await Application.Current?.MainPage?.DisplayAlert("Lỗi", "Vui lòng nhập email và mật khẩu", "OK");
+                return;
+            }
+
+            // Yêu cầu nhập tên đầy đủ
+            string? fullName = await Application.Current?.MainPage?.DisplayPromptAsync(
+                "Đăng ký",
+                "Nhập tên đầy đủ:",
+                "Tiếp tục",
+                "Hủy",
+                keyboard: Keyboard.Text
+            );
+
+            if (string.IsNullOrWhiteSpace(fullName))
+            {
+                return; // User hủy
+            }
+
+            // 🔌 Ưu tiên Web API, nếu không được thì dùng local DB
+            bool success = false;
+            if (await _apiService.IsWebAdminAvailableAsync())
+            {
+                Debug.WriteLine("✅ Đăng ký từ Web API");
+                success = await _apiService.RegisterUserAsync(fullName, email, password);
+            }
+
+             if (!success)
+            {
+                Debug.WriteLine("⚠️  Đăng ký từ local database");
+                success = await _dbService.RegisterUserAsync(fullName, email, password);
+            }
+
+            if (success)
+            {
+                // Tự động đăng nhập sau khi đăng ký
+                var user = await _dbService.LoginUserAsync(email, password);
+                if (user != null)
+                {
+                    Microsoft.Maui.Storage.Preferences.Default.Set("CurrentUserEmail", user.Email);
+                    CurrentUser = user;
+                    IsLoggedIn = true;
+                    emailEntry.Text = "";
+                    passwordEntry.Text = "";
+                    await Application.Current?.MainPage?.DisplayAlert("Thành công", "Đăng ký thành công!", "OK");
+                }
+            }
+            else
+            {
+                await Application.Current?.MainPage?.DisplayAlert("Lỗi", "Email này đã được đăng ký", "OK");
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"❌ Lỗi đăng ký: {ex.Message}");
+            await Application.Current?.MainPage?.DisplayAlert("Lỗi", $"Lỗi đăng ký: {ex.Message}", "OK");
+        }
+    }
+
+    [RelayCommand]
+    private async Task Logout()
+    {
+        // Xóa email khỏi Preferences
+        Microsoft.Maui.Storage.Preferences.Default.Remove("CurrentUserEmail");
+
+        // Đặt lại trạng thái
+        IsLoggedIn = false;
+        CurrentUser = null;
+
+        await Application.Current?.MainPage?.DisplayAlert("Thông báo", "Đã đăng xuất", "OK");
     }
 
     [RelayCommand]

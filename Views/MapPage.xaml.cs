@@ -12,6 +12,7 @@ using Microsoft.Maui.Devices.Sensors;
 using Microsoft.Maui.Media;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;
 using System.Text.Json;
@@ -77,9 +78,11 @@ public partial class MapPage : ContentPage, IQueryAttributable
     protected override async void OnAppearing()
     {
         base.OnAppearing();
+
+        // Load dữ liệu quán ăn từ database
         await LoadDataFromDatabaseAsync();
 
-        // THÊM: Tự động cập nhật ảnh đại diện người dùng
+        // Cập nhật ảnh đại diện người dùng
         await UpdateUserAvatarAsync();
     }
 
@@ -178,19 +181,36 @@ public partial class MapPage : ContentPage, IQueryAttributable
 
     private void SetupMap()
     {
-        if (foodMapView.Map == null) foodMapView.Map = new Mapsui.Map();
-        foodMapView.Map.Layers.Clear();
-        
-        var tileSource = new HttpTileSource(
-            new GlobalSphericalMercator(), 
-            "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", 
-            new[] { "a", "b", "c" }, 
-            name: "OpenStreetMap");
-            
-        foodMapView.Map.Layers.Add(new TileLayer(tileSource));
-        var center = SphericalMercator.FromLonLat(106.7000, 10.7600);
-        foodMapView.Map.Home = n => n.CenterOnAndZoomTo(new MPoint(center.x, center.y), 2);
-        foodMapView.MyLocationEnabled = true;
+        try
+        {
+            if (foodMapView.Map == null) foodMapView.Map = new Mapsui.Map();
+            foodMapView.Map.Layers.Clear();
+
+            var tileSource = new HttpTileSource(
+                new GlobalSphericalMercator(), 
+                "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", 
+                new[] { "a", "b", "c" }, 
+                name: "OpenStreetMap");
+
+            foodMapView.Map.Layers.Add(new TileLayer(tileSource));
+
+            // Set initial center point for Vĩnh Khánh, Ho Chi Minh City
+            var center = SphericalMercator.FromLonLat(106.7000, 10.7600);
+            foodMapView.Map.Home = n => n.CenterOnAndZoomTo(new MPoint(center.x, center.y), 2);
+
+            // Explicitly navigate to home on first load
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                foodMapView.Map?.Navigator.CenterOnAndZoomTo(new MPoint(center.x, center.y), 2);
+            });
+
+            foodMapView.MyLocationEnabled = true;
+            Debug.WriteLine("✅ Map initialized successfully");
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"❌ Map initialization error: {ex.Message}");
+        }
     }
 
     private void StartRadar()

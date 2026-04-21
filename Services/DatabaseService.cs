@@ -219,28 +219,36 @@ public class DatabaseService
         return false;
     }
 
-    // 💳 HÀM XỬ LÝ THANH TOÁN
-    public async Task<bool> ProcessPaymentAsync(int userId)
+    // 💳 HÀM CẬP NHẬT TRẠNG THÁI THANH TOÁN
+    public async Task<bool> UpdatePaymentStatusAsync(int userId, bool isPaid)
     {
         await InitAsync();
         var user = await _connection!.Table<User>().Where(u => u.Id == userId).FirstOrDefaultAsync();
 
         if (user != null)
         {
-            user.IsPaid = true;
-            user.PaidDate = DateTime.Now;
+            user.IsPaid = isPaid;
+            user.PaidAt = isPaid ? DateTime.Now : null;
             var result = await _connection.UpdateAsync(user);
             return result > 0;
         }
         return false;
     }
 
-    // Kiểm tra trạng thái thanh toán
-    public async Task<bool> IsUserPaidAsync(int userId)
+    // 💳 HÀM CẬP NHẬT TRẠNG THÁI THANH TOÁN BẰNG EMAIL
+    public async Task<bool> UpdatePaymentStatusByEmailAsync(string email, bool isPaid)
     {
         await InitAsync();
-        var user = await _connection!.Table<User>().Where(u => u.Id == userId).FirstOrDefaultAsync();
-        return user?.IsPaid ?? false;
+        var user = await _connection!.Table<User>().Where(u => u.Email == email).FirstOrDefaultAsync();
+
+        if (user != null)
+        {
+            user.IsPaid = isPaid;
+            user.PaidAt = isPaid ? DateTime.Now : null;
+            var result = await _connection.UpdateAsync(user);
+            return result > 0;
+        }
+        return false;
     }
 
 }
