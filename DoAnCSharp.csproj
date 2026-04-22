@@ -32,6 +32,10 @@
     </ItemGroup>
 
     <ItemGroup>
+      <Compile Include="DoAnCSharp.AdminWeb\DoAnCSharp.AdminWeb\Models\QRScanStatistics.cs" />
+    </ItemGroup>
+
+    <ItemGroup>
       <Content Include="DoAnCSharp.AdminWeb\DoAnCSharp.AdminWeb\wwwroot\css\admin.css" />
       <Content Include="DoAnCSharp.AdminWeb\DoAnCSharp.AdminWeb\wwwroot\css\admin_clean.css" />
       <Content Include="DoAnCSharp.AdminWeb\DoAnCSharp.AdminWeb\wwwroot\css\admin_modern.css" />
@@ -41,6 +45,7 @@
       <Content Include="DoAnCSharp.AdminWeb\DoAnCSharp.AdminWeb\wwwroot\poi-public.html" />
       <Content Include="DoAnCSharp.AdminWeb\DoAnCSharp.AdminWeb\wwwroot\qr-code-modal.html" />
       <Content Include="DoAnCSharp.AdminWeb\DoAnCSharp.AdminWeb\wwwroot\test-qr.html" />
+      <Content Include="DoAnCSharp.AdminWeb\PUSH_NOW.txt" />
       <Content Include="DoAnCSharp.AdminWeb\QR_FIX_STATUS.txt" />
       <Content Include="DoAnCSharp.AdminWeb\QR_FULL_URL_FIX_READY.txt" />
       <Content Include="DoAnCSharp.AdminWeb\QUICK_REFERENCE.txt" />
@@ -54,13 +59,24 @@
       <None Include="DoAnCSharp.AdminWeb\ALL_FIXES_FINAL.md" />
       <None Include="DoAnCSharp.AdminWeb\CHANGES_MADE.md" />
       <None Include="DoAnCSharp.AdminWeb\CHANGES_SUMMARY_COMPLETE.md" />
+      <None Include="DoAnCSharp.AdminWeb\cleanup-and-push.ps1" />
       <None Include="DoAnCSharp.AdminWeb\cleanup-and-restart.ps1" />
+      <None Include="DoAnCSharp.AdminWeb\COMPLETE_FIX_POI_NOT_FOUND.md" />
       <None Include="DoAnCSharp.AdminWeb\COMPLETE_FIX_SUMMARY.md" />
       <None Include="DoAnCSharp.AdminWeb\CSS_FIXED_QUICK.md" />
       <None Include="DoAnCSharp.AdminWeb\CSS_FIXES_COMPLETE.md" />
       <None Include="DoAnCSharp.AdminWeb\CSS_FIXES_COMPLETE_2024.md" />
       <None Include="DoAnCSharp.AdminWeb\CSS_FIX_COMPLETE.md" />
       <None Include="DoAnCSharp.AdminWeb\CSS_TESTING_GUIDE.md" />
+      <None Include="DoAnCSharp.AdminWeb\DEVICE_TRACKING_COMPLETE_GUIDE.md" />
+      <None Include="DoAnCSharp.AdminWeb\DEVICE_TRACKING_DO_THIS_NOW.md" />
+      <None Include="DoAnCSharp.AdminWeb\DEVICE_TRACKING_FEATURE_COMPLETE.md" />
+      <None Include="DoAnCSharp.AdminWeb\DEVICE_TRACKING_IMPLEMENTATION_COMPLETE.md" />
+      <None Include="DoAnCSharp.AdminWeb\DEVICE_TRACKING_INDEX.md" />
+      <None Include="DoAnCSharp.AdminWeb\DEVICE_TRACKING_QUICK_REF.md" />
+      <None Include="DoAnCSharp.AdminWeb\DEVICE_TRACKING_TESTING.md" />
+      <None Include="DoAnCSharp.AdminWeb\DEV_TUNNELS_GUIDE.md" />
+      <None Include="DoAnCSharp.AdminWeb\DEV_TUNNELS_QUICK.md" />
       <None Include="DoAnCSharp.AdminWeb\DoAnCSharp.AdminWeb\DoAnCSharp.AdminWeb.csproj" />
       <None Include="DoAnCSharp.AdminWeb\DoAnCSharp.AdminWeb\wwwroot\js\admin-features.js" />
       <None Include="DoAnCSharp.AdminWeb\DoAnCSharp.AdminWeb\wwwroot\js\devices.js" />
@@ -68,6 +84,7 @@
       <None Include="DoAnCSharp.AdminWeb\DOCUMENTATION_INDEX.md" />
       <None Include="DoAnCSharp.AdminWeb\DOCUMENTATION_INDEX_FIXES.md" />
       <None Include="DoAnCSharp.AdminWeb\DOCUMENTATION_INDEX_QR_FIX.md" />
+      <None Include="DoAnCSharp.AdminWeb\DO_THIS_NOW_FIX.md" />
       <None Include="DoAnCSharp.AdminWeb\ERRORS_FIXED_COMPLETE_REPORT.md" />
       <None Include="DoAnCSharp.AdminWeb\ERROR_FIX_REPORT.md" />
       <None Include="DoAnCSharp.AdminWeb\EXACT_CHANGES_MADE.md" />
@@ -79,6 +96,7 @@
       <None Include="DoAnCSharp.AdminWeb\FINAL_VERIFICATION_COMPLETE.md" />
       <None Include="DoAnCSharp.AdminWeb\fix-and-restart.ps1" />
       <None Include="DoAnCSharp.AdminWeb\fix-css-qr.ps1" />
+      <None Include="DoAnCSharp.AdminWeb\fix-poi-not-found.ps1" />
       <None Include="DoAnCSharp.AdminWeb\FIXES_APPLIED.md" />
       <None Include="DoAnCSharp.AdminWeb\FIXES_COMPLETE_2_ISSUES.md" />
       <None Include="DoAnCSharp.AdminWeb\FIXES_HEADER_QR_COMPLETE.md" />
@@ -87,11 +105,13 @@
       <None Include="DoAnCSharp.AdminWeb\FIX_COMPLETE_GUIDE.md" />
       <None Include="DoAnCSharp.AdminWeb\FIX_COMPLETE_SUMMARY.md" />
       <None Include="DoAnCSharp.AdminWeb\FIX_FORM_AND_QR_SCANNER.md" />
+      <None Include="DoAnCSharp.AdminWeb\FIX_POI_NOT_FOUND_2024.md" />
       <None Include="DoAnCSharp.AdminWeb\FIX_POI_NOT_FOUND_COMPLETE.md" />
       <None Include="DoAnCSharp.AdminWeb\FIX_POI_NOT_FOUND_FINAL.md" />
       <None Include="DoAnCSharp.AdminWeb\FIX_QR_SCANNING.md" />
       <None Include="DoAnCSharp.AdminWeb\FIX_SUMMARY.md" />
       <None Include="DoAnCSharp.AdminWeb\FIX_SUMMARY_2_ISSUES.md" />
+      <None Include="DoAnCSharp.AdminWeb\FIX_SUMMARY_POI_NOT_FOUND.md" />
       <None Include="DoAnCSharp.AdminWeb\FIX_WEB_FREEZE_ISSUE.md" />
       <None Include="DoAnCSharp.AdminWeb\FORM_VALIDATION_GUIDE.md" />
       <None Include="DoAnCSharp.AdminWeb\generate-qr-codes.ps1" />
@@ -102,6 +122,9 @@
       <None Include="DoAnCSharp.AdminWeb\IMPLEMENTATION_SUMMARY.md" />
       <None Include="DoAnCSharp.AdminWeb\NEXT_STEPS_ACTION_REQUIRED.md" />
       <None Include="DoAnCSharp.AdminWeb\POI_CREATE_TEST.md" />
+      <None Include="DoAnCSharp.AdminWeb\POI_LOOKUP_FLOW_DIAGRAM.md" />
+      <None Include="DoAnCSharp.AdminWeb\POI_NOT_FOUND_INDEX.md" />
+      <None Include="DoAnCSharp.AdminWeb\PUSH_TO_GITHUB.md" />
       <None Include="DoAnCSharp.AdminWeb\QR_AUTO_GENERATION_GUIDE.md" />
       <None Include="DoAnCSharp.AdminWeb\QR_AUTO_GEN_COMPLETE.md" />
       <None Include="DoAnCSharp.AdminWeb\QR_CAMERA_SCANNING.md" />
@@ -137,6 +160,7 @@
       <None Include="DoAnCSharp.AdminWeb\QR_VISUAL_REFERENCE.md" />
       <None Include="DoAnCSharp.AdminWeb\QR_VISUAL_SUMMARY.md" />
       <None Include="DoAnCSharp.AdminWeb\quick-qr-fix.ps1" />
+      <None Include="DoAnCSharp.AdminWeb\QUICK_FIX_POI_NOT_FOUND.md" />
       <None Include="DoAnCSharp.AdminWeb\QUICK_REFERENCE.md" />
       <None Include="DoAnCSharp.AdminWeb\QUICK_START.md" />
       <None Include="DoAnCSharp.AdminWeb\QUICK_START_3_FIXES.md" />
@@ -155,8 +179,10 @@
       <None Include="DoAnCSharp.AdminWeb\RESTART_SERVER_NOW.md" />
       <None Include="DoAnCSharp.AdminWeb\ROOT_CAUSE_AND_FIX_EXPLAINED.md" />
       <None Include="DoAnCSharp.AdminWeb\run-admin.ps1" />
+      <None Include="DoAnCSharp.AdminWeb\setup-dev-tunnel.ps1" />
       <None Include="DoAnCSharp.AdminWeb\START_3_FIXES.md" />
       <None Include="DoAnCSharp.AdminWeb\START_CSS_FIXED.md" />
+      <None Include="DoAnCSharp.AdminWeb\START_FIX_NOW.md" />
       <None Include="DoAnCSharp.AdminWeb\START_HERE_ALL_FIXED.md" />
       <None Include="DoAnCSharp.AdminWeb\START_HERE_NOW.md" />
       <None Include="DoAnCSharp.AdminWeb\START_HERE_QR_FIX.md" />
@@ -164,6 +190,7 @@
       <None Include="DoAnCSharp.AdminWeb\START_TESTING_NOW.md" />
       <None Include="DoAnCSharp.AdminWeb\test-all-features.ps1" />
       <None Include="DoAnCSharp.AdminWeb\test-poi-debug.ps1" />
+      <None Include="DoAnCSharp.AdminWeb\test-poi-seeding.ps1" />
       <None Include="DoAnCSharp.AdminWeb\test-qr-scanning.ps1" />
       <None Include="DoAnCSharp.AdminWeb\TEST_QR_FIXES.md" />
       <None Include="DoAnCSharp.AdminWeb\USER_GUIDE_QR_LAYOUT.md" />
@@ -175,6 +202,7 @@
       <None Include="DoAnCSharp.AdminWeb\VISUAL_BEFORE_AFTER_FIX.md" />
       <None Include="DoAnCSharp.AdminWeb\VISUAL_COMPARISON_3_FIXES.md" />
       <None Include="DoAnCSharp.AdminWeb\VISUAL_ERROR_FIX_SUMMARY.md" />
+      <None Include="DoAnCSharp.AdminWeb\VISUAL_FIX_GUIDE.md" />
       <None Include="DoAnCSharp.AdminWeb\VISUAL_GUIDE_2_FIXES.md" />
       <None Include="DoAnCSharp.AdminWeb\VISUAL_REFERENCE_FINAL.md" />
       <None Include="DoAnCSharp.AdminWeb\VISUAL_SUMMARY_QR_FIX.md" />

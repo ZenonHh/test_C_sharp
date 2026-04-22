@@ -206,6 +206,22 @@ public class QRScansController : ControllerBase
             scanLimit.ScanCount++;
             await _db.SaveDeviceScanLimitAsync(scanLimit);
 
+            // 🔥 NEW: Save QR scan statistics for dashboard
+            await _db.SaveOrUpdateQRScanStatisticsAsync(poi.Id, deviceId);
+
+            // 🔥 NEW: Save scan history with device ID
+            var scanRequest = new QRScanRequest
+            {
+                QRCode = code,
+                DeviceId = deviceId,
+                POIId = poi.Id,
+                ScannedAt = DateTime.Now,
+                IpAddress = Request.HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                UserAgent = Request.Headers["User-Agent"].ToString(),
+                Success = true
+            };
+            await _db.SaveQRScanRequestAsync(scanRequest);
+
             _logger.LogInformation("Quét QR thành công: {QRCode} → POI {POIId} từ device {DeviceId}", code, poi.Id, deviceId);
 
             // Redirect tới trang hiển thị
@@ -381,6 +397,85 @@ public class QRScansController : ControllerBase
             });
         }
         catch (Exception ex)
+        {
+            _logger.LogError(ex, "Lỗi khi lấy danh sách online devices");
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// 🔥 NEW: Get QR scan statistics for dashboard
+    /// </summary>
+    [HttpGet("statistics")]
+    public async Task<ActionResult> GetQRScanStatistics([FromQuery] int days = 7)
+    {
+        try
+        {
+            var endDate = DateTime.Now.Date;
+            var startDate = endDate.AddDays(-days);
+
+            var statistics = await _db.GetQRScanStatisticsByDateRangeAsync(startDate, endDate);
+            var totalScans = await _db.GetTotalQRScansAsync();
+            var todayScans = await _db.GetTotalQRScansTodayAsync();
+
+            return Ok(new
+            {
+                totalScans,
+                todayScans,
+                statistics = statistics.OrderByDescending(s => s.ScanDate).ToList()
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Lỗi khi lấy thống kê QR scan");
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// 🔥 NEW: Get QR scan history with device information
+    /// </summary>
+    [HttpGet("history")]
+    public async Task<ActionResult> GetQRScanHistory([FromQuery] int limit = 100)
+    {
+        try
+        {
+            var history = await _db.GetQRScanHistoryAsync(limit);
+            return Ok(new
+            {
+                totalRecords = history.Count,
+                history = history.OrderByDescending(h => h.ScannedAt).ToList()
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Lỗi khi lấy lịch sử QR scan");
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// 🔥 NEW: Get QR scan history by device ID
+    /// </summary>
+    [HttpGet("history/{deviceId}")]
+    public async Task<ActionResult> GetQRScanHistoryByDevice(string deviceId)
+    {
+        try
+        {
+            var history = await _db.GetQRScanHistoryByDeviceAsync(deviceId);
+            return Ok(new
+            {
+                deviceId,
+                totalScans = history.Count,
+                history = history.OrderByDescending(h => h.ScannedAt).ToList()
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Lỗi khi lấy lịch sử QR scan theo device");
+            return BadRequest(new { error = ex.Message });
+        }
+    }
         {
             _logger.LogError(ex, "Lỗi khi lấy danh sách devices online");
             return BadRequest(new { error = ex.Message });

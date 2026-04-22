@@ -29,6 +29,7 @@ body {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   min-height: 100vh;
   color: var(--dark);
+  padding-top: 120px !important; /* Fix header overlap */
 }
 
 /* ===== HEADER ===== */
@@ -41,6 +42,9 @@ header {
   background: white !important;
   box-shadow: var(--shadow-lg) !important;
   border: none !important;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 20px !important;
 }
 
 header h1 {

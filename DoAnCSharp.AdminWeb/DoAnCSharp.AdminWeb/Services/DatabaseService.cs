@@ -55,6 +55,7 @@ public class DatabaseService
             await _connection.CreateTableAsync<QRCodeSession>();
             await _connection.CreateTableAsync<QRScanRequest>();
             await _connection.CreateTableAsync<DeviceScanLimit>();
+            await _connection.CreateTableAsync<QRScanStatistics>();
         }
         finally
         {
@@ -498,6 +499,111 @@ public class DatabaseService
         return await _connection!.DeleteAsync<AdminUser>(id);
     }
 
+    // QR Scan Statistics Operations - NEW
+    public async Task<QRScanStatistics?> GetQRScanStatisticsAsync(int poiId, DateTime scanDate)
+    {
+        await InitAsync();
+        return await _connection!.Table<QRScanStatistics>()
+            .Where(s => s.POIId == poiId && s.ScanDate.Date == scanDate.Date)
+            .FirstOrDefaultAsync();
+    }
+
+    public async Task<List<QRScanStatistics>> GetAllQRScanStatisticsAsync()
+    {
+        await InitAsync();
+        return await _connection!.Table<QRScanStatistics>()
+            .OrderByDescending(s => s.ScanDate)
+            .ToListAsync();
+    }
+
+    public async Task<List<QRScanStatistics>> GetQRScanStatisticsByDateRangeAsync(DateTime startDate, DateTime endDate)
+    {
+        await InitAsync();
+        return await _connection!.Table<QRScanStatistics>()
+            .Where(s => s.ScanDate >= startDate && s.ScanDate <= endDate)
+            .OrderByDescending(s => s.ScanDate)
+            .ToListAsync();
+    }
+
+    public async Task SaveOrUpdateQRScanStatisticsAsync(int poiId, string deviceId)
+    {
+        await InitAsync();
+        var today = DateTime.Now.Date;
+        var stat = await GetQRScanStatisticsAsync(poiId, today);
+
+        if (stat == null)
+        {
+            // Create new statistics record
+            stat = new QRScanStatistics
+            {
+                POIId = poiId,
+                ScanDate = today,
+                ScanCount = 1,
+                UniqueDeviceIds = deviceId,
+                CreatedAt = DateTime.Now
+            };
+            await _connection!.InsertAsync(stat);
+        }
+        else
+        {
+            // Update existing record
+            stat.ScanCount++;
+
+            // Add device ID if not already in list
+            var devices = stat.UniqueDeviceIds?.Split(',').ToList() ?? new List<string>();
+            if (!devices.Contains(deviceId))
+            {
+                devices.Add(deviceId);
+                stat.UniqueDeviceIds = string.Join(",", devices);
+            }
+
+            stat.UpdatedAt = DateTime.Now;
+            await _connection!.UpdateAsync(stat);
+        }
+    }
+
+    public async Task<int> GetTotalQRScansAsync()
+    {
+        await InitAsync();
+        var stats = await _connection!.Table<QRScanStatistics>().ToListAsync();
+        return stats.Sum(s => s.ScanCount);
+    }
+
+    public async Task<int> GetTotalQRScansTodayAsync()
+    {
+        await InitAsync();
+        var today = DateTime.Now.Date;
+        var stats = await _connection!.Table<QRScanStatistics>()
+            .Where(s => s.ScanDate.Date == today)
+            .ToListAsync();
+        return stats.Sum(s => s.ScanCount);
+    }
+
+    // QR Scan Request History - NEW
+    public async Task SaveQRScanRequestAsync(QRScanRequest request)
+    {
+        await InitAsync();
+        await _connection!.InsertAsync(request);
+    }
+
+    public async Task<List<QRScanRequest>> GetQRScanHistoryAsync(int limit = 100)
+    {
+        await InitAsync();
+        return await _connection!.Table<QRScanRequest>()
+            .OrderByDescending(r => r.ScannedAt)
+            .Take(limit)
+            .ToListAsync();
+    }
+
+    public async Task<List<QRScanRequest>> GetQRScanHistoryByDeviceAsync(string deviceId)
+    {
+        await InitAsync();
+        return await _connection!.Table<QRScanRequest>()
+            .Where(r => r.DeviceId == deviceId)
+            .OrderByDescending(r => r.ScannedAt)
+            .ToListAsync();
+    }
+
     // SystemSetting Operations
     public async Task<string?> GetSettingValueAsync(string key)
     {
@@ -897,5 +1003,165 @@ public class DatabaseService
         }
 
         return limits;
+    }
+
+    // ===== QR SCAN STATISTICS METHODS =====
+
+    /// <summary>
+    /// Lưu thống kê quét QR - Ghi nhận mỗi lần quét QR
+    /// </summary>
+    public async Task<int> SaveQRScanStatisticsAsync(QRScanStatistics scan)
+    {
+        await InitAsync();
+        return await _connection!.InsertAsync(scan);
+    }
+
+    /// <summary>
+    /// Lấy tất cả thống kê quét
+    /// </summary>
+    public async Task<List<QRScanStatistics>> GetAllQRScansAsync()
+    {
+        await InitAsync();
+        return await _connection!.Table<QRScanStatistics>().ToListAsync();
+    }
+
+    /// <summary>
+    /// Lấy số lần quét hôm nay
+    /// </summary>
+    public async Task<int> GetTodayScansCountAsync()
+    {
+        await InitAsync();
+        var today = DateTime.UtcNow.Date;
+        return await _connection!.Table<QRScanStatistics>()
+            .Where(s => s.ScanDate == today && s.Status == "success")
+            .CountAsync();
+    }
+
+    /// <summary>
+    /// Lấy số quán được quét hôm nay
+    /// </summary>
+    public async Task<int> GetUniquePOIsScannedTodayAsync()
+    {
+        await InitAsync();
+        var today = DateTime.UtcNow.Date;
+        var scans = await _connection!.Table<QRScanStatistics>()
+            .Where(s => s.ScanDate == today && s.Status == "success")
+            .ToListAsync();
+        return scans.Select(s => s.POIId).Distinct().Count();
+    }
+
+    /// <summary>
+    /// Lấy số quán được quét tuần này
+    /// </summary>
+    public async Task<int> GetUniquePOIsScannedThisWeekAsync()
+    {
+        await InitAsync();
+        var today = DateTime.UtcNow.Date;
+        var weekAgo = today.AddDays(-7);
+        var scans = await _connection!.Table<QRScanStatistics>()
+            .Where(s => s.ScanDate >= weekAgo && s.ScanDate <= today && s.Status == "success")
+            .ToListAsync();
+        return scans.Select(s => s.POIId).Distinct().Count();
+    }
+
+    /// <summary>
+    /// Lấy top quán được quét nhiều nhất trong khoảng thời gian
+    /// </summary>
+    public async Task<List<POIScanInfo>> GetTopScannedPOIsAsync(int days = 30, int limit = 10)
+    {
+        await InitAsync();
+        var startDate = DateTime.UtcNow.Date.AddDays(-days);
+        var scans = await _connection!.Table<QRScanStatistics>()
+            .Where(s => s.ScanDate >= startDate && s.Status == "success")
+            .ToListAsync();
+
+        var grouped = scans
+            .GroupBy(s => new { s.POIId, s.POIName })
+            .Select(g => new POIScanInfo
+            {
+                POIId = g.Key.POIId,
+                POIName = g.Key.POIName,
+                ScanCount = g.Count(),
+                UniqueDevices = g.Select(x => x.DeviceId).Distinct().Count(),
+                LastScannedTime = g.Max(x => x.ScanTime)
+            })
+            .OrderByDescending(x => x.ScanCount)
+            .Take(limit)
+            .ToList();
+
+        // Calculate percentage
+        var totalScans = grouped.Sum(x => x.ScanCount);
+        foreach (var item in grouped)
+        {
+            item.Percentage = totalScans > 0 ? $"{(item.ScanCount * 100 / totalScans)}%" : "0%";
+        }
+
+        return grouped;
+    }
+
+    /// <summary>
+    /// Lấy thống kê QR scan chi tiết
+    /// </summary>
+    public async Task<QRScanStatisticsDTO> GetQRScanStatisticsAsync()
+    {
+        await InitAsync();
+        var today = DateTime.UtcNow.Date;
+        var thisWeekStart = today.AddDays(-(int)today.DayOfWeek);
+        var thisMonthStart = new DateTime(today.Year, today.Month, 1);
+
+        var allScans = await _connection!.Table<QRScanStatistics>()
+            .Where(s => s.Status == "success")
+            .ToListAsync();
+
+        var todayScans = allScans.Where(s => s.ScanDate == today).ToList();
+        var weekScans = allScans.Where(s => s.ScanDate >= thisWeekStart && s.ScanDate <= today).ToList();
+        var monthScans = allScans.Where(s => s.ScanDate >= thisMonthStart && s.ScanDate <= today).ToList();
+
+        return new QRScanStatisticsDTO
+        {
+            TotalScansToday = todayScans.Count,
+            TotalScansThisWeek = weekScans.Count,
+            TotalScansThisMonth = monthScans.Count,
+            UniquePOIsScannedToday = todayScans.Select(s => s.POIId).Distinct().Count(),
+            UniquePOIsScannedThisWeek = weekScans.Select(s => s.POIId).Distinct().Count(),
+            TopScannedPOIs = await GetTopScannedPOIsAsync(30, 10),
+            RecentScans = allScans.OrderByDescending(s => s.ScanTime).Take(20).ToList()
+        };
+    }
+
+    /// <summary>
+    /// Lấy lịch sử quét của một quán
+    /// </summary>
+    public async Task<List<QRScanStatistics>> GetPOIScanHistoryAsync(int poiId, int days = 30)
+    {
+        await InitAsync();
+        var startDate = DateTime.UtcNow.Date.AddDays(-days);
+        return await _connection!.Table<QRScanStatistics>()
+            .Where(s => s.POIId == poiId && s.ScanDate >= startDate && s.Status == "success")
+            .OrderByDescending(s => s.ScanTime)
+            .ToListAsync();
+    }
+
+    /// <summary>
+    /// Lấy lịch sử quét của một thiết bị
+    /// </summary>
+    public async Task<List<QRScanStatistics>> GetDeviceScanHistoryAsync(string deviceId, int days = 30)
+    {
+        await InitAsync();
+        var startDate = DateTime.UtcNow.Date.AddDays(-days);
+        return await _connection!.Table<QRScanStatistics>()
+            .Where(s => s.DeviceId == deviceId && s.ScanDate >= startDate)
+            .OrderByDescending(s => s.ScanTime)
+            .ToListAsync();
+    }
+
+    /// <summary>
+    /// Xóa thống kê quét cũ (dọn dẹp database)
+    /// </summary>
+    public async Task<int> DeleteOldQRScansAsync(int daysOld = 90)
+    {
+        await InitAsync();
+        var cutoffDate = DateTime.UtcNow.Date.AddDays(-daysOld);
+        return await _connection!.DeleteAsync<QRScanStatistics>(s => s.ScanDate < cutoffDate);
     }
 }
