@@ -58,6 +58,7 @@
       <None Include="DoAnCSharp.AdminWeb\ADMIN_FEATURES_COMPLETE.md" />
       <None Include="DoAnCSharp.AdminWeb\ALL_FIXES_COMPLETE.md" />
       <None Include="DoAnCSharp.AdminWeb\ALL_FIXES_FINAL.md" />
+      <None Include="DoAnCSharp.AdminWeb\AUTO_QR_WITH_DEV_TUNNELS.md" />
       <None Include="DoAnCSharp.AdminWeb\CHANGES_MADE.md" />
       <None Include="DoAnCSharp.AdminWeb\CHANGES_SUMMARY_COMPLETE.md" />
       <None Include="DoAnCSharp.AdminWeb\cleanup-and-push.ps1" />
@@ -181,6 +182,7 @@
       <None Include="DoAnCSharp.AdminWeb\RESTART_SERVER_NOW.md" />
       <None Include="DoAnCSharp.AdminWeb\ROOT_CAUSE_AND_FIX_EXPLAINED.md" />
       <None Include="DoAnCSharp.AdminWeb\run-admin.ps1" />
+      <None Include="DoAnCSharp.AdminWeb\setup-dev-tunnel-auto.ps1" />
       <None Include="DoAnCSharp.AdminWeb\setup-dev-tunnel.ps1" />
       <None Include="DoAnCSharp.AdminWeb\SETUP_DEV_TUNNELS_NOW.md" />
       <None Include="DoAnCSharp.AdminWeb\START_3_FIXES.md" />

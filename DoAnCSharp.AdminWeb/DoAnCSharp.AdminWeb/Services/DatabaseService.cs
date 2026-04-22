@@ -499,6 +499,59 @@ public class DatabaseService
         return await _connection!.DeleteAsync<AdminUser>(id);
     }
 
+    // 🌐 Base URL Management for QR Codes - NEW
+    public async Task<string> GetCurrentBaseUrlAsync()
+    {
+        await Task.CompletedTask; // For async signature
+
+        // Priority 1: Dev Tunnel URL from environment variable
+        var tunnelUrl = Environment.GetEnvironmentVariable("DEV_TUNNEL_URL");
+        if (!string.IsNullOrEmpty(tunnelUrl))
+        {
+            Console.WriteLine($"✅ Using Dev Tunnel URL: {tunnelUrl}");
+            return tunnelUrl.TrimEnd('/');
+        }
+
+        // Priority 2: Configured public URL
+        var publicUrl = Environment.GetEnvironmentVariable("PUBLIC_URL");
+        if (!string.IsNullOrEmpty(publicUrl))
+        {
+            Console.WriteLine($"✅ Using Public URL: {publicUrl}");
+            return publicUrl.TrimEnd('/');
+        }
+
+        // Priority 3: Default local URL
+        var defaultUrl = "http://172.20.10.2:5000";
+        Console.WriteLine($"⚠️  Using Default URL: {defaultUrl} (Set DEV_TUNNEL_URL for public access)");
+        return defaultUrl;
+    }
+
+    public async Task<string> GenerateQRCodeUrlAsync(AudioPOI poi)
+    {
+        var baseUrl = await GetCurrentBaseUrlAsync();
+
+        // Extract code from existing QRCode if it's a full URL
+        string code = poi.QRCode;
+        if (code != null && code.Contains("/qr/"))
+        {
+            code = code.Substring(code.LastIndexOf("/qr/") + 4);
+        }
+        else if (string.IsNullOrEmpty(code))
+        {
+            // Generate new code if not exists
+            code = "POI_" + Guid.NewGuid().ToString("N").Substring(0, 10).ToUpper();
+        }
+
+        return $"{baseUrl}/qr/{code}";
+    }
+
+    public async Task<string> GenerateNewQRCodeAsync()
+    {
+        var baseUrl = await GetCurrentBaseUrlAsync();
+        var code = "POI_" + Guid.NewGuid().ToString("N").Substring(0, 10).ToUpper();
+        return $"{baseUrl}/qr/{code}";
+    }
+
     // QR Scan Statistics Operations - NEW
     public async Task<QRScanStatistics?> GetQRScanStatisticsAsync(int poiId, DateTime scanDate)
     {

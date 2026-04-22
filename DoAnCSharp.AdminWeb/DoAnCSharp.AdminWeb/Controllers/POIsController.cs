@@ -74,10 +74,10 @@ public class POIsController : ControllerBase
             if (string.IsNullOrWhiteSpace(poi.Name))
                 return BadRequest(new { error = "Name is required" });
 
-            // Tự động tạo một mã QR duy nhất nếu chưa có
+            // Tự động tạo một mã QR duy nhất nếu chưa có (với Dev Tunnel URL)
             if (string.IsNullOrWhiteSpace(poi.QRCode))
             {
-                poi.QRCode = GenerateQRCode();
+                poi.QRCode = await GenerateQRCodeAsync();
             }
 
             poi.CreatedAt = DateTime.Now;
@@ -106,7 +106,15 @@ public class POIsController : ControllerBase
             // Giữ QR code cũ nếu không thay đổi
             if (string.IsNullOrWhiteSpace(poi.QRCode))
             {
-                poi.QRCode = existing.QRCode ?? GenerateQRCode();
+                poi.QRCode = existing.QRCode ?? await GenerateQRCodeAsync();
+            }
+            else if (!poi.QRCode.StartsWith("http"))
+            {
+                // Nếu chỉ có code (không phải full URL), tạo lại với tunnel URL
+                var baseUrl = Environment.GetEnvironmentVariable("DEV_TUNNEL_URL") ?? 
+                             _configuration["ServerSettings:PublicUrl"] ?? 
+                             $"{Request.Scheme}://{Request.Host}";
+                poi.QRCode = $"{baseUrl.TrimEnd('/')}/qr/{poi.QRCode}";
             }
 
             poi.UpdatedAt = DateTime.Now;
@@ -123,21 +131,35 @@ public class POIsController : ControllerBase
     }
 
     /// <summary>
-    /// Generate unique QR code with full URL
-    /// Format: Full URL (http://server/qr/POI_XXXXXXXXXX)
-    /// This ensures QR codes are scannable by phones
+    /// 🔥 Generate unique QR code with full URL - Auto-detects Dev Tunnels!
+    /// Format: Full URL (https://tunnel-url.devtunnels.ms/qr/POI_XXXXXXXXXX)
+    /// Priority: 1. Dev Tunnel URL, 2. Public URL, 3. Current Request Host
     /// </summary>
-    private string GenerateQRCode()
+    private async Task<string> GenerateQRCodeAsync()
     {
         // Generate base code: POI_XXXXXXXXXX
         string baseCode = "POI_" + Guid.NewGuid().ToString("N").Substring(0, 10).ToUpper();
 
-        // Get public server URL from configuration or current request
-        string publicUrl = _configuration["ServerSettings:PublicUrl"] ?? 
-                          $"{Request.Scheme}://{Request.Host}";
+        // Priority 1: Dev Tunnel URL (from environment variable)
+        var tunnelUrl = Environment.GetEnvironmentVariable("DEV_TUNNEL_URL");
+        if (!string.IsNullOrEmpty(tunnelUrl))
+        {
+            _logger.LogInformation("✅ Using Dev Tunnel URL for QR: {TunnelUrl}", tunnelUrl);
+            return $"{tunnelUrl.TrimEnd('/')}/qr/{baseCode}";
+        }
 
-        // Return full URL so QR codes contain complete, scannable data
-        return $"{publicUrl}/qr/{baseCode}";
+        // Priority 2: Public URL from configuration
+        string publicUrl = _configuration["ServerSettings:PublicUrl"];
+        if (!string.IsNullOrEmpty(publicUrl))
+        {
+            _logger.LogInformation("✅ Using Public URL for QR: {PublicUrl}", publicUrl);
+            return $"{publicUrl.TrimEnd('/')}/qr/{baseCode}";
+        }
+
+        // Priority 3: Current request host (fallback)
+        var requestUrl = $"{Request.Scheme}://{Request.Host}";
+        _logger.LogWarning("⚠️  Using Request URL for QR: {RequestUrl} (Consider setting DEV_TUNNEL_URL)", requestUrl);
+        return $"{requestUrl}/qr/{baseCode}";
     }
 
     /// <summary>
