@@ -49,6 +49,7 @@
       <Content Include="DoAnCSharp.AdminWeb\QR_FIX_STATUS.txt" />
       <Content Include="DoAnCSharp.AdminWeb\QR_FULL_URL_FIX_READY.txt" />
       <Content Include="DoAnCSharp.AdminWeb\QUICK_REFERENCE.txt" />
+      <Content Include="DoAnCSharp.AdminWeb\QUICK_SUMMARY_CHANGES.txt" />
     </ItemGroup>
 
     <ItemGroup>
@@ -151,6 +152,7 @@
       <None Include="DoAnCSharp.AdminWeb\QR_SCANNING_COMPLETE_GUIDE.md" />
       <None Include="DoAnCSharp.AdminWeb\QR_SCANNING_NOT_WORKING_FIX.md" />
       <None Include="DoAnCSharp.AdminWeb\QR_SCANNING_WITH_FULL_URL_INDEX.md" />
+      <None Include="DoAnCSharp.AdminWeb\QR_SCAN_TRACKING_COMPLETE.md" />
       <None Include="DoAnCSharp.AdminWeb\QR_TESTING_GUIDE_COMPLETE.md" />
       <None Include="DoAnCSharp.AdminWeb\QR_TESTING_STEPS.md" />
       <None Include="DoAnCSharp.AdminWeb\QR_TEST_GUIDE.md" />
@@ -180,6 +182,7 @@
       <None Include="DoAnCSharp.AdminWeb\ROOT_CAUSE_AND_FIX_EXPLAINED.md" />
       <None Include="DoAnCSharp.AdminWeb\run-admin.ps1" />
       <None Include="DoAnCSharp.AdminWeb\setup-dev-tunnel.ps1" />
+      <None Include="DoAnCSharp.AdminWeb\SETUP_DEV_TUNNELS_NOW.md" />
       <None Include="DoAnCSharp.AdminWeb\START_3_FIXES.md" />
       <None Include="DoAnCSharp.AdminWeb\START_CSS_FIXED.md" />
       <None Include="DoAnCSharp.AdminWeb\START_FIX_NOW.md" />
